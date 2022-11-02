@@ -1,0 +1,34 @@
+{
+  "name": "uint8-util",
+  "version": "1.0.0",
+  "description": "Fastest possible buffer-like utilities for uint8.",
+  "main": "index.js",
+  "browser": "browser.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "exports": {
+    "node": "./node.js",
+    "default": "./browser.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ThaUnknown/uint8-util.git"
+  },
+  "keywords": [
+    "uint8",
+    "buffer",
+    "sha1",
+    "crypto",
+    "hex",
+    "tohex",
+    "tostring"
+  ],
+  "author": "ThaUnknown",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ThaUnknown/uint8-util/issues"
+  },
+  "homepage": "https://github.com/ThaUnknown/uint8-util#readme"
+}

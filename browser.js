@@ -1,6 +1,6 @@
 import { arr2hex, text2arr } from './util.js'
 
-const scope = globalThis || window || self
+const scope = typeof window !== 'undefined' ? window : self
 const crypto = scope.crypto || scope.msCrypto || {}
 const subtle = crypto.subtle || crypto.webkitSubtle
 

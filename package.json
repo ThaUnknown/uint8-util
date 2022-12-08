@@ -1,15 +1,18 @@
 {
   "name": "uint8-util",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "Fastest possible buffer-like utilities for uint8.",
   "main": "index.js",
   "browser": "browser.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "bench-node-2text": "node benchmark/arr2text.js",
+    "bench-node-2arr": "node benchmark/text2arr.js",
+    "bench-browser-2text": "airtap --preset local -- benchmark/arr2text.js",
+    "bench-browser-2arr": "airtap --preset local -- benchmark/text2arr.js"
   },
   "exports": {
-    "node": "./node.js",
+    "node": "./_node.js",
     "default": "./browser.js"
   },
   "repository": {
@@ -30,5 +33,16 @@
   "bugs": {
     "url": "https://github.com/ThaUnknown/uint8-util/issues"
   },
-  "homepage": "https://github.com/ThaUnknown/uint8-util#readme"
+  "homepage": "https://github.com/ThaUnknown/uint8-util#readme",
+  "devDependencies": {
+    "@babel/core": "^7.20.5",
+    "@babel/preset-env": "^7.20.2",
+    "airtap": "^4.0.4",
+    "airtap-manual": "^1.0.0",
+    "babelify": "^10.0.0",
+    "benchmark": "^2.1.4"
+  },
+  "dependencies": {
+    "@babel/plugin-syntax-import-assertions": "^7.20.0"
+  }
 }

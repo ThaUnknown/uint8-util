@@ -1,26 +1,39 @@
-import { arr2hex, text2arr } from './util.js'
-
-const scope = typeof window !== 'undefined' ? window : self
-const crypto = scope.crypto || scope.msCrypto || {}
-const subtle = crypto.subtle || crypto.webkitSubtle
-
-export const hash = async (data, algo, hex) => {
-  if (!subtle) throw new Error('no web crypto support')
-  if (typeof data === 'string') data = text2arr(data)
-  const out = new Uint8Array(await subtle.digest(algo, data))
-  return hex ? arr2hex(out) : out
-}
+import { arr2hex } from './util.js'
 
 const decoder = new TextDecoder()
-export const arr2string = (buffer) => {
-  if (buffer instanceof ArrayBuffer) buffer = new Uint8Array(buffer)
+// 50% slower at < 48 chars, but little impact at 4M OPS/s vs 8M OPS/s
+export const arr2text = (buffer) => {
   return decoder.decode(buffer)
 }
 
 // sacrifice ~20% speed for bundle size
 const encoder = new TextEncoder()
-export const string2arr = string => {
+export const text2arr = string => {
   return encoder.encode(string)
+}
+
+export const arr2base = buffer => {
+  return btoa(arr2text(buffer))
+}
+
+export const base2arr = str => {
+  return encoder.encode(atob(str))
+}
+
+const scope = typeof window !== 'undefined' ? window : self
+const crypto = scope.crypto || scope.msCrypto || {}
+const subtle = crypto.subtle || crypto.webkitSubtle
+
+const formatMap = {
+  hex: arr2hex,
+  base64: arr2base
+}
+
+export const hash = async (data, format, algo = 'sha-1') => {
+  if (!subtle) throw new Error('no web crypto support')
+  if (typeof data === 'string') data = text2arr(data)
+  const out = new Uint8Array(await subtle.digest(algo, data))
+  return format ? formatMap[format](out) : out
 }
 
 export * from './util.js'

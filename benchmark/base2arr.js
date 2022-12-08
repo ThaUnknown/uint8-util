@@ -1,4 +1,5 @@
 import Benchmark from 'benchmark'
+import { decode } from 'base64-arraybuffer'
 
 globalThis.Benchmark = Benchmark
 
@@ -29,6 +30,13 @@ suite
   })
   .add('Buffer.from', function () {
     const res = new Uint8Array(Buffer.from(base, 'base64'))
+
+    if (!checkBuffer(res)) {
+      throw new Error('String decoding failed')
+    }
+  })
+  .add('b642ab', function () {
+    const res = new Uint8Array(decode(base))
 
     if (!checkBuffer(res)) {
       throw new Error('String decoding failed')

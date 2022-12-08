@@ -1,4 +1,5 @@
 import Benchmark from 'benchmark'
+import { encode } from 'base64-arraybuffer'
 
 globalThis.Benchmark = Benchmark
 
@@ -19,6 +20,13 @@ suite
   })
   .add('Buffer.toString', () => {
     const res = Buffer.from(DATA).toString('base64')
+
+    if (res !== base) {
+      throw new Error('String encoding failed')
+    }
+  })
+  .add('b64ab', () => {
+    const res = encode(DATA)
 
     if (res !== base) {
       throw new Error('String encoding failed')

@@ -1,4 +1,5 @@
 import { arr2hex } from './util.js'
+import { decode, encode } from 'base64-arraybuffer'
 
 const decoder = new TextDecoder()
 // 50% slower at < 48 chars, but little impact at 4M OPS/s vs 8M OPS/s
@@ -13,11 +14,11 @@ export const text2arr = string => {
 }
 
 export const arr2base = buffer => {
-  return btoa(arr2text(buffer))
+  return encode(buffer)
 }
 
 export const base2arr = str => {
-  return encoder.encode(atob(str))
+  return new Uint8Array(decode(str))
 }
 
 const scope = typeof window !== 'undefined' ? window : self

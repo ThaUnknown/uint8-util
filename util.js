@@ -39,3 +39,19 @@ export const hex2arr = string => {
   }
   return array
 }
+
+export const concat = (chunks, size) => {
+  if (!size) {
+    size = 0
+    let i = chunks.length || chunks.byteLength || 0
+    while (i--) size += chunks[i].length
+  }
+  const b = new Uint8Array(size)
+  let offset = 0
+  for (const chunk of chunks) {
+    b.set(chunk, offset)
+    offset += chunk.byteLength || chunk.length
+  }
+
+  return b
+}

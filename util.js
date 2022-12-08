@@ -55,3 +55,11 @@ export const concat = (chunks, size) => {
 
   return b
 }
+
+export const equal = (a, b) => {
+  if (a.byteLength !== b.byteLength) return false
+  for (let i = a.length; i > -1; i -= 1) {
+    if ((a[i] !== b[i])) return false
+  }
+  return true
+}

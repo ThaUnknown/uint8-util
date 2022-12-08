@@ -1,6 +1,6 @@
 {
   "name": "uint8-util",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "description": "Fastest possible buffer-like utilities for uint8.",
   "main": "index.js",
   "browser": "browser.js",

@@ -1,9 +1,10 @@
 {
   "name": "uint8-util",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "description": "Fastest possible buffer-like utilities for uint8.",
   "main": "index.js",
   "browser": "browser.js",
+  "chromeapp": "browser.js",
   "type": "module",
   "scripts": {
     "bench-node-2text": "node benchmark/arr2text.js",

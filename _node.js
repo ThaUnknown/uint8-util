@@ -6,17 +6,15 @@ export const arr2text = buffer => {
   return Buffer.from(buffer).toString('utf8')
 }
 
-export const text2arr = str => {
-  return new Uint8Array(Buffer.from(str, 'utf-8'))
-}
+export const text2arr = str => new Uint8Array(Buffer.from(str, 'utf-8'))
 
-export const arr2base = buffer => {
-  return Buffer.from(buffer).toString('base64')
-}
+export const arr2base = buffer => Buffer.from(buffer).toString('base64')
 
-export const base2arr = str => {
-  return new Uint8Array(Buffer.from(str, 'base64'))
-}
+export const base2arr = str => new Uint8Array(Buffer.from(str, 'base64'))
+
+export const hex2bin = hex => Buffer.from(hex, 'hex').toString('binary')
+
+export const bin2hex = bin => Buffer.from(bin, 'binary').toString('hex')
 
 export const hash = async (data, format, algo = 'sha1') => {
   algo = algo.replace('sha-', 'sha')

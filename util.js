@@ -3,7 +3,7 @@
 * @author   Jimmy Wärting <jimmy@warting.se> (https://jimmy.warting.se/opensource)
 * @license  MIT
 */
-const alphabet = '0123456789abcdef'
+export const alphabet = '0123456789abcdef'
 const encodeLookup = []
 const decodeLookup = []
 

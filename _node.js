@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto'
+import { createHash, randomBytes as rand } from 'node:crypto'
 
 const decoder = new TextDecoder()
 export const arr2text = buffer => {
@@ -20,6 +20,10 @@ export const hash = async (data, format, algo = 'sha1') => {
   algo = algo.replace('sha-', 'sha')
   const out = createHash(algo).update(data)
   return format ? out.digest(format) : new Uint8Array(out.digest().buffer)
+}
+
+export const randomBytes = size => {
+  return new Uint8Array(rand(size))
 }
 
 export * from './util.js'

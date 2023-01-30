@@ -60,4 +60,9 @@ export const hash = async (data, format, algo = 'sha-1') => {
   return format ? formatMap[format](out) : out
 }
 
+export const randomBytes = size => {
+  const view = new Uint8Array(size)
+  return crypto.getRandomValues(view)
+}
+
 export * from './util.js'

@@ -18,24 +18,24 @@ for (let i = 0; i < 256; i++) {
   }
 }
 
-export const arr2hex = array => {
-  const length = array.length
+export const arr2hex = data => {
+  const length = data.length
   let string = ''
   let i = 0
   while (i < length) {
-    string += encodeLookup[array[i++]]
+    string += encodeLookup[data[i++]]
   }
   return string
 }
 
-export const hex2arr = string => {
-  const sizeof = string.length >> 1
+export const hex2arr = str => {
+  const sizeof = str.length >> 1
   const length = sizeof << 1
   const array = new Uint8Array(sizeof)
   let n = 0
   let i = 0
   while (i < length) {
-    array[n++] = decodeLookup[string.charCodeAt(i++)] << 4 | decodeLookup[string.charCodeAt(i++)]
+    array[n++] = decodeLookup[str.charCodeAt(i++)] << 4 | decodeLookup[str.charCodeAt(i++)]
   }
   return array
 }

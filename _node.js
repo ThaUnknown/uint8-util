@@ -1,14 +1,18 @@
 import { createHash, randomBytes as rand } from 'node:crypto'
 
 const decoder = new TextDecoder()
-export const arr2text = buffer => {
-  if (buffer.byteLength > 1024) return decoder.decode(buffer)
-  return Buffer.from(buffer).toString('utf8')
+export const arr2text = (data, enc) => {
+  if (data.byteLength > 1024) {
+    if (!enc) return decoder.decode(data)
+    const dec = new TextDecoder(enc)
+    return dec.decode(data)
+  }
+  return Buffer.from(data).toString(enc || 'utf8')
 }
 
-export const text2arr = str => new Uint8Array(Buffer.from(str, 'utf-8'))
+export const text2arr = str => new Uint8Array(Buffer.from(str, 'utf8'))
 
-export const arr2base = buffer => Buffer.from(buffer).toString('base64')
+export const arr2base = data => Buffer.from(data).toString('base64')
 
 export const base2arr = str => new Uint8Array(Buffer.from(str, 'base64'))
 

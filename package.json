@@ -1,6 +1,6 @@
 {
   "name": "uint8-util",
-  "version": "2.1.7",
+  "version": "2.1.8",
   "description": "Fastest possible buffer-like utilities for uint8.",
   "main": "index.js",
   "browser": "browser.js",
@@ -20,12 +20,15 @@
   },
   "exports": {
     "node": "./_node.js",
-    "default": "./browser.js"
+    "default": "./browser.js",
+    "import": "./browser.js"
   },
+  "types": "./index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ThaUnknown/uint8-util.git"
   },
+  "files": ["_node.js", "browser.js", "util.js", "index.d.ts"],
   "keywords": [
     "uint8",
     "buffer",

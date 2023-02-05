@@ -3,13 +3,17 @@ import { decode, encode } from 'base64-arraybuffer'
 
 const decoder = new TextDecoder()
 // 50% slower at < 48 chars, but little impact at 4M OPS/s vs 8M OPS/s
-export const arr2text = (buffer) => decoder.decode(buffer)
+export const arr2text = (data, enc) => {
+  if (!enc) return decoder.decode(data)
+  const dec = new TextDecoder(enc)
+  return dec.decode(data)
+}
 
 // sacrifice ~20% speed for bundle size
 const encoder = new TextEncoder()
-export const text2arr = string => encoder.encode(string)
+export const text2arr = str => encoder.encode(str)
 
-export const arr2base = buffer => encode(buffer)
+export const arr2base = data => encode(data)
 
 export const base2arr = str => new Uint8Array(decode(str))
 

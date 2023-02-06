@@ -1,6 +1,6 @@
 {
   "name": "uint8-util",
-  "version": "2.1.8",
+  "version": "2.1.9",
   "description": "Fastest possible buffer-like utilities for uint8.",
   "main": "index.js",
   "browser": "browser.js",
@@ -20,8 +20,8 @@
   },
   "exports": {
     "node": "./_node.js",
-    "default": "./browser.js",
-    "import": "./browser.js"
+    "import": "./browser.js",
+    "default": "./browser.js"
   },
   "types": "./index.d.ts",
   "repository": {

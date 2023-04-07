@@ -44,7 +44,7 @@ export function arr2hex (data: Uint8Array | Array): Hex
 
 export function hex2array (str: Hex): Uint8Array
 
-export function arr2text (data: ArrayBuffer | Uint8Array, enc: Encoding): string
+export function arr2text (data: ArrayBuffer | Uint8Array, enc?: Encoding): string
 
 export function arr2base (data: Uint8Array | Array): Base64
 
@@ -56,6 +56,6 @@ export function hex2bin (str: Hex): string
 
 export function bin2hex (str: string): Hex
 
-export async function hash (data: string | TypedArray | ArrayBuffer | DataView, format: HashType, algo: HashAlgo): Uint8Array | Hex | Base64
+export async function hash (data: string | TypedArray | ArrayBuffer | DataView, format?: HashType, algo?: HashAlgo): Uint8Array | Hex | Base64
 
 export function randomBytes (size: number): Uint8Array

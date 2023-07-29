@@ -1,4 +1,4 @@
-import { arr2hex, alphabet } from './util.js'
+import { arr2hex, hex2arr, alphabet } from './util.js'
 import { decode, encode } from 'base64-arraybuffer'
 
 const decoder = new TextDecoder()
@@ -25,8 +25,7 @@ export const bin2hex = str => {
 
   while (i < len) {
     c = str.charCodeAt(i++)
-    res += alphabet[c >> 4]
-    res += alphabet[c & 0xF]
+    res += alphabet[c >> 4] + alphabet[c & 0xF]
   }
 
   return res
@@ -34,16 +33,13 @@ export const bin2hex = str => {
 
 const MAX_ARGUMENTS_LENGTH = 0x10000
 export const hex2bin = hex => {
-  const points = new Array(hex.length / 2)
-  for (let i = 0, l = hex.length / 2; i < l; ++i) {
-    points[i] = parseInt(hex.substr(i * 2, 2), 16)
-  }
+  const points = hex2arr(hex)
   if (points.length <= MAX_ARGUMENTS_LENGTH) return String.fromCharCode(...points)
 
   let res = ''
   let i = 0
   while (i < points.length) {
-    res += String.fromCharCode(...points.slice(i, i += MAX_ARGUMENTS_LENGTH))
+    res += String.fromCharCode(...points.subarray(i, i += MAX_ARGUMENTS_LENGTH))
   }
   return res
 }

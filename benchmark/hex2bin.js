@@ -16,11 +16,41 @@ const hex2binary = hex => {
   return string
 }
 
+export const alphabet = '0123456789abcdef'
+const decodeLookup = []
+
+for (let i = 0; i < 256; i++) {
+  if (i < 16) {
+    if (i < 10) {
+      decodeLookup[0x30 + i] = i
+    } else {
+      decodeLookup[0x61 - 10 + i] = i
+    }
+  }
+}
+
+const hex2arr = str => {
+  const sizeof = str.length >> 1
+  const length = sizeof << 1
+  const array = new Uint8Array(sizeof)
+  let n = 0
+  let i = 0
+  while (i < length) {
+    array[n++] = decodeLookup[str.charCodeAt(i++)] << 4 | decodeLookup[str.charCodeAt(i++)]
+  }
+  return array
+}
+
 const hex2binspread = hex => {
   const points = new Array(hex.length / 2)
   for (let i = 0, l = hex.length / 2; i < l; ++i) {
     points[i] = parseInt(hex.substr(i * 2, 2), 16)
   }
+  return decodeCodePointsArray(points)
+}
+
+const hex2binspread2arr = hex => {
+  const points = hex2arr(hex)
   return decodeCodePointsArray(points)
 }
 
@@ -58,6 +88,12 @@ suite
   })
   .add('wtcommonspread', function () {
     const res = hex2binspread(hex)
+    if (res !== bin) {
+      throw new Error('String decoding failed')
+    }
+  })
+  .add('wtcommonspread2arr', function () {
+    const res = hex2binspread2arr(hex)
     if (res !== bin) {
       throw new Error('String decoding failed')
     }

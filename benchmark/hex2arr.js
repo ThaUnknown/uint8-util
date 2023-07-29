@@ -44,6 +44,17 @@ const number = str => {
   }
   return array
 }
+const int = str => {
+  const sizeof = str.length >> 1
+  const length = sizeof << 1
+  const array = new Uint8Array(sizeof)
+  let n = 0
+  let i = 0
+  while (i < length) {
+    array[n++] = parseInt(str.substring(i++, ++i), 16)
+  }
+  return array
+}
 
 suite
   .add('buffer', function () {
@@ -54,6 +65,9 @@ suite
   })
   .add('number', function () {
     number(hex)
+  })
+  .add('int', function () {
+    int(hex)
   })
 
 suite

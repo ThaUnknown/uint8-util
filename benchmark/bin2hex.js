@@ -16,8 +16,7 @@ const bin2hex = str => {
 
   while (i < len) {
     c = str.charCodeAt(i++)
-    res += alph[c >> 4]
-    res += alph[c & 0xF]
+    res += alph[c >> 4] + alph[c & 0xF]
   }
 
   return res

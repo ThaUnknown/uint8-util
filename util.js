@@ -40,24 +40,25 @@ export const hex2arr = str => {
   return array
 }
 
-export const concat = (chunks, size) => {
+export const concat = (chunks, size = 0) => {
+  const length = chunks.length || 0
   if (!size) {
-    size = 0
-    let i = chunks.length || chunks.byteLength || 0
+    let i = length
     while (i--) size += chunks[i].length
   }
   const b = new Uint8Array(size)
   let offset = 0
-  for (const chunk of chunks) {
-    b.set(chunk, offset)
-    offset += chunk.byteLength || chunk.length
+  let i = length
+  while (i--) {
+    b.set(chunks[i], offset)
+    offset += chunks[i].length
   }
 
   return b
 }
 
 export const equal = (a, b) => {
-  if (a.byteLength !== b.byteLength) return false
+  if (a.length !== b.length) return false
   for (let i = a.length; i > -1; i -= 1) {
     if ((a[i] !== b[i])) return false
   }

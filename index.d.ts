@@ -27,7 +27,9 @@ type HashAlgo =
   | 'sha-384'
   | 'sha-512'
 
-type HexPrimitive = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | 'A' | 'B' | 'C' | 'D' | 'E' | 'F'
+type Uint8 = Uint8Array | Array
+
+type HexPrimitive = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
 type HexPart<S extends string | number> = `${S}${'' | `${S}`}`
 type Hex = HexPart<HexPart<HexPrimitive>>
 
@@ -36,17 +38,17 @@ type BasePart<S extends string> = `${S}${'' | `${S}`}`
 type Base64 = BasePart<BasePart<BasePrimitive>>
 
 
-export function concat (chunks: (TypedArray | Array)[]): Uint8Array
+export function concat (chunks: (TypedArray | Array)[], size?: number): Uint8Array
 
-export function equal (a: TypedArray, b: TypedArray): boolean
+export function equal (a: Uint8, b: Uint8): boolean
 
-export function arr2hex (data: Uint8Array | Array): Hex
+export function arr2hex (data: Uint8): Hex
 
 export function hex2array (str: Hex): Uint8Array
 
 export function arr2text (data: ArrayBuffer | Uint8Array, enc?: Encoding): string
 
-export function arr2base (data: Uint8Array | Array): Base64
+export function arr2base (data: Uint8): Base64
 
 export function base2arr (str: Base64): Uint8Array
 
@@ -56,6 +58,6 @@ export function hex2bin (str: Hex): string
 
 export function bin2hex (str: string): Hex
 
-export async function hash (data: string | TypedArray | ArrayBuffer | DataView, format?: HashType, algo?: HashAlgo): Uint8Array | Hex | Base64
+export async function hash (data: string | TypedArray | ArrayBuffer | DataView, format?: HashType, algo?: HashAlgo): Promise<Uint8Array | Hex | Base64>
 
 export function randomBytes (size: number): Uint8Array

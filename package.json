@@ -1,6 +1,6 @@
 {
   "name": "uint8-util",
-  "version": "2.1.9",
+  "version": "2.2.0",
   "description": "Fastest possible buffer-like utilities for uint8.",
   "main": "index.js",
   "browser": "browser.js",
@@ -11,6 +11,8 @@
     "bench-node-hex2bin": "node benchmark/hex2bin.js",
     "bench-node-2text": "node benchmark/arr2text.js",
     "bench-node-2arr": "node benchmark/text2arr.js",
+    "bench-node-hex2arr": "node benchmark/hex2arr.js",
+    "bench-browser-hex2arr": "airtap --preset local -- benchmark/hex2arr.js",
     "bench-browser-bin2hex": "airtap --preset local -- benchmark/bin2hex.js",
     "bench-browser-hex2bin": "airtap --preset local -- benchmark/hex2bin.js",
     "bench-browser-2text": "airtap --preset local -- benchmark/arr2text.js",

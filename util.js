@@ -47,11 +47,11 @@ export const concat = (chunks, size = 0) => {
     while (i--) size += chunks[i].length
   }
   const b = new Uint8Array(size)
-  let offset = 0
+  let offset = size
   let i = length
   while (i--) {
+    offset -= chunks[i].length
     b.set(chunks[i], offset)
-    offset += chunks[i].length
   }
 
   return b

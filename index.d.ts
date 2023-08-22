@@ -27,18 +27,14 @@ type HashAlgo =
   | 'sha-384'
   | 'sha-512'
 
-type Uint8 = Uint8Array | Array
+type Uint8 = Uint8Array | Array<number>
 
-type HexPrimitive = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-type HexPart<S extends string | number> = `${S}${'' | `${S}`}`
-type Hex = HexPart<HexPart<HexPrimitive>>
+type Hex = string
 
-type BasePrimitive = "A"|"B"|"C"|"D"|"E"|"F"|"G"|"H"|"I"|"J"|"K"|"L"|"M"|"N"|"O"|"P"|"Q"|"R"|"S"|"T"|"U"|"V"|"W"|"X"|"Y"|"Z"|"a"|"b"|"c"|"d"|"e"|"f"|"g"|"h"|"i"|"j"|"k"|"l"|"m"|"n"|"o"|"p"|"q"|"r"|"s"|"t"|"u"|"v"|"w"|"x"|"y"|"z"|"0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"|"+"|"/"|"="
-type BasePart<S extends string> = `${S}${'' | `${S}`}`
-type Base64 = BasePart<BasePart<BasePrimitive>>
+type Base64 = string
 
 
-export function concat (chunks: (TypedArray | Array)[], size?: number): Uint8Array
+export function concat (chunks: (TypedArray | Array<number>)[], size?: number): Uint8Array
 
 export function equal (a: Uint8, b: Uint8): boolean
 
@@ -58,6 +54,6 @@ export function hex2bin (str: Hex): string
 
 export function bin2hex (str: string): Hex
 
-export async function hash (data: string | TypedArray | ArrayBuffer | DataView, format?: HashType, algo?: HashAlgo): Promise<Uint8Array | Hex | Base64>
+export function hash (data: string | TypedArray | ArrayBuffer | DataView, format?: HashType, algo?: HashAlgo): Promise<Uint8Array | Hex | Base64>
 
 export function randomBytes (size: number): Uint8Array

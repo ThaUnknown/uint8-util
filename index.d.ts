@@ -40,7 +40,7 @@ export function equal (a: Uint8, b: Uint8): boolean
 
 export function arr2hex (data: Uint8): Hex
 
-export function hex2array (str: Hex): Uint8Array
+export function hex2arr (str: Hex): Uint8Array
 
 export function arr2text (data: ArrayBuffer | Uint8Array, enc?: Encoding): string
 

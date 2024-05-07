@@ -1,6 +1,6 @@
 {
   "name": "uint8-util",
-  "version": "2.2.4",
+  "version": "2.2.5",
   "description": "Fastest possible buffer-like utilities for uint8.",
   "main": "index.js",
   "browser": "browser.js",
@@ -21,9 +21,22 @@
     "bench-browser-4base": "airtap --preset local -- benchmark/base2arr.js"
   },
   "exports": {
-    "node": "./_node.js",
-    "import": "./browser.js",
-    "default": "./browser.js"
+    "node": {
+      "types": "./index.d.ts",
+      "import": "./_node.js"
+    },
+    "browser": {
+      "types": "./index.d.ts",
+      "import": "./browser.js"
+    },
+    "chromeapp": {
+      "types": "./index.d.ts",
+      "import": "./browser.js"
+    },
+    "default": {
+      "types": "./index.d.ts",
+      "import": "./browser.js"
+    }
   },
   "types": "./index.d.ts",
   "repository": {

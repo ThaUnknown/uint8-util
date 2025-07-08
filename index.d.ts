@@ -54,6 +54,8 @@ export function hex2bin (str: Hex): string
 
 export function bin2hex (str: string): Hex
 
+export function hash (data: string | TypedArray | ArrayBuffer | DataView, format?: undefined, algo?: HashAlgo): Promise<Uint8Array>
+export function hash (data: string | TypedArray | ArrayBuffer | DataView, format: HashType, algo?: HashAlgo): Promise<Hex | Base64>
 export function hash (data: string | TypedArray | ArrayBuffer | DataView, format?: HashType, algo?: HashAlgo): Promise<Uint8Array | Hex | Base64>
 
 export function randomBytes (size: number): Uint8Array

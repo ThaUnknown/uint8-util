@@ -4,7 +4,9 @@
 * @license  MIT
 */
 export const alphabet = '0123456789abcdef'
+/** @type string[] */
 const encodeLookup = []
+/** @type number[] */
 const decodeLookup = []
 
 for (let i = 0; i < 256; i++) {
@@ -28,6 +30,10 @@ export const arr2hex = data => {
   return string
 }
 
+/**
+ * @param {string} str 
+ * @returns 
+ */
 export const hex2arr = str => {
   const sizeof = str.length >> 1
   const length = sizeof << 1
@@ -63,4 +69,26 @@ export const equal = (a, b) => {
     if ((a[i] !== b[i])) return false
   }
   return true
+}
+
+export const compare = (a, b) => {
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return a[i] - b[i]
+  }
+  return 0
+}
+
+export const xor = (a, b) => {
+  for (let len = a.length; len--;) a[len] ^= b[len]
+  return a
+}
+
+export const or = (a, b) => {
+  for (let len = a.length; len--;) a[len] |= b[len]
+  return a
+}
+
+export const and = (a, b) => {
+  for (let len = a.length; len--;) a[len] &= b[len]
+  return a
 }

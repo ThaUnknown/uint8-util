@@ -36,7 +36,15 @@ type Base64 = string
 
 export function concat (chunks: (TypedArray | Array<number>)[], size?: number): Uint8Array
 
+export function compare (a: Uint8, b: Uint8): number
+
 export function equal (a: Uint8, b: Uint8): boolean
+
+export function xor (a: Uint8, b: Uint8): Uint8
+
+export function or (a: Uint8, b: Uint8): Uint8
+
+export function and (a: Uint8, b: Uint8): Uint8
 
 export function arr2hex (data: Uint8): Hex
 

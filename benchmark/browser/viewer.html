@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>uint8-util Benchmark Viewer</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #0d1117; color: #c9d1d9; padding: 24px;
+}
+h1 { font-size: 20px; margin-bottom: 16px; color: #58a6ff; }
+.toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+textarea {
+  width: 100%; min-height: 200px; background: #161b22; color: #c9d1d9;
+  border: 1px solid #30363d; border-radius: 6px; padding: 12px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13px; resize: vertical;
+}
+textarea:focus { outline: none; border-color: #58a6ff; }
+.btn {
+  background: #21262d; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px;
+  padding: 8px 16px; cursor: pointer; font-size: 13px;
+}
+.btn:hover { background: #30363d; }
+.btn.primary { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+.btn.primary:hover { background: #388bfd; }
+.btn.danger { background: #da3633; border-color: #da3633; color: #fff; }
+.btn.danger:hover { background: #f85149; }
+.size-filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.size-chip {
+  background: #21262d; border: 1px solid #30363d; border-radius: 20px;
+  padding: 4px 14px; font-size: 12px; cursor: pointer; user-select: none; color: #8b949e;
+}
+.size-chip.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+.size-chip.all { border-style: dashed; }
+.stats { font-size: 12px; color: #8b949e; margin-bottom: 12px; }
+#output {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(700px,100%),1fr));
+  gap: 12px; align-items: start;
+}
+.group {
+  background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+  overflow: hidden;
+}
+.group-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; cursor: pointer; user-select: none;
+  border-bottom: 1px solid #21262d;
+}
+.group-header .arrow { transition: transform .15s; font-size: 10px; color: #8b949e; }
+.group-header.collapsed .arrow { transform: rotate(-90deg); }
+.group-header.collapsed + .group-body { display: none; }
+.group-header .label { font-weight: 600; font-size: 14px; }
+.group-header .size { font-size: 12px; color: #8b949e; margin-left: 8px; }
+.group-header .count { margin-left: auto; font-size: 11px; color: #8b949e; }
+.group-body { padding: 8px 16px 12px; }
+.bar-row {
+  display: flex; align-items: center; gap: 8px; padding: 3px 0;
+  font-size: 12px;
+}
+.bar-row:hover { background: #1c2128; border-radius: 4px; }
+.bar-label { flex: 0 0 260px; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-value {
+  flex: 0 0 200px; text-align: right; font-size: 11px; color: #8b949e;
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.bar-row.best .bar-value { color: #58a6ff; font-weight: 600; }
+.bar-track { flex: 1; height: 18px; background: #21262d; border-radius: 3px; overflow: hidden; }
+.bar {
+  height: 100%; border-radius: 3px; transition: width .3s ease;
+}
+hr { border: none; border-top: 1px solid #21262d; margin: 4px 0; }
+.summary { font-size: 11px; color: #8b949e; padding: 4px 0 0; }
+.empty { text-align: center; padding: 40px; color: #8b949e; grid-column: 1 / -1; }
+.empty svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: .3; }
+@media (max-width: 700px) {
+  .bar-label { flex-basis: 140px; font-size: 11px; }
+  body { padding: 12px; }
+}
+</style>
+</head>
+<body>
+
+<h1>uint8-util Benchmark Viewer</h1>
+
+<div class="toolbar">
+  <button class="btn primary" id="parseBtn">Parse</button>
+  <button class="btn" id="clearBtn">Clear</button>
+  <label class="btn" style="cursor:pointer">
+    Load file…
+    <input type="file" accept=".txt" style="display:none" id="fileInput">
+  </label>
+  <span id="stats" class="stats"></span>
+</div>
+
+<textarea id="input" placeholder="Paste benchmark output here..."># compare equal    65536B
+  comp buf equal    65536B                                   496511 ops/sec  100.0%
+  comp lib equal    65536B                                    79638 ops/sec  16.0%
+  comp lib unalign 65536B                                     78471 ops/sec  15.8%
+  comp 32 equal    65536B                                     40250 ops/sec  8.1%
+  comp dv equal    65536B                                     37584 ops/sec  7.6%
+  comp byte equal    65536B                                   22216 ops/sec  4.5%
+
+# compare diffMid   65536B
+  comp buf diffMid   65536B                                  956006 ops/sec  100.0%
+  comp lib diffMid   65536B                                  154979 ops/sec  16.2%
+  comp lib unalign 65536B                                    154178 ops/sec  16.1%
+  comp 32 diffMid   65536B                                    80852 ops/sec  8.5%
+  comp dv diffMid   65536B                                    73928 ops/sec  7.7%
+  comp byte diffMid   65536B                                  43881 ops/sec  4.6%
+
+# compare diffLen   65536B
+  comp byte diffLen   65536B                              149138498 ops/sec  100.0%
+  comp buf diffLen   65536B                                22024540 ops/sec  14.8%
+  comp 32 diffLen   65536B                                 20575334 ops/sec  13.8%
+  comp lib unalign 65536B                                  19534267 ops/sec  13.1%
+  comp lib diffLen   65536B                                11088866 ops/sec  7.4%
+  comp dv diffLen   65536B                                  7292475 ops/sec  4.9%</textarea>
+
+<div id="sizeFilters" class="size-filters"></div>
+<div id="output"><div class="empty"><p>Paste benchmark output and click Parse</p></div></div>
+
+<script>
+const ENTRY_RE = /^\s+(.+?)\s+([\d,]+)\s+ops\/sec\s+([\d.]+)%/
+const GROUP_RE = /^#\s+(.+)/
+
+function parseGroups (text) {
+  const groups = []
+  let current = null
+  for (const line of text.split('\n')) {
+    const gm = line.match(GROUP_RE)
+    if (gm) {
+      current = { name: gm[1].trim(), entries: [] }
+      groups.push(current)
+      continue
+    }
+    if (!current) continue
+    const em = line.match(ENTRY_RE)
+    if (em) {
+      current.entries.push({
+        name: em[1].trim(),
+        ops: parseInt(em[2].replace(/,/g, ''), 10),
+        pct: parseFloat(em[3])
+      })
+    }
+  }
+  return groups.filter(g => g.entries.length > 0)
+}
+
+function extractSizes (groups) {
+  const sizes = new Set()
+  for (const g of groups) {
+    const m = g.name.match(/(\d+(?:\.\d+)?[KMGTPEZY]?B)/i)
+    if (m) sizes.add(m[1])
+    for (const e of g.entries) {
+      const m2 = e.name.match(/(\d+(?:\.\d+)?[KMGTPEZY]?B)/i)
+      if (m2) sizes.add(m2[1])
+    }
+  }
+  return [...sizes].sort((a, b) => {
+    const na = parseFloat(a), nb = parseFloat(b)
+    const ua = a.replace(/[\d.]/g, ''), ub = b.replace(/[\d.]/g, '')
+    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB']
+    return (na * (2 ** (units.indexOf(ua) * 10))) - (nb * (2 ** (units.indexOf(ub) * 10)))
+  })
+}
+
+function extractTypes (groups) {
+  const types = new Set()
+  for (const g of groups) {
+    const t = g.name.split(/\s+/)[0]
+    if (t) types.add(t)
+  }
+  return [...types].sort()
+}
+
+function matchesSize (name, sizeFilter) {
+  if (!sizeFilter || sizeFilter === 'all') return true
+  return name.includes(sizeFilter)
+}
+
+let activeSize = 'all', activeType = 'all'
+
+function render (groups) {
+  const sizes = extractSizes(groups)
+  const types = extractTypes(groups)
+
+  const sizeContainer = document.getElementById('sizeFilters')
+  sizeContainer.innerHTML = '<span class="size-chip all' + (activeSize === 'all' ? ' active' : '') + '" data-filter="size:all">All sizes</span>' +
+    sizes.map(s => '<span class="size-chip' + (activeSize === s ? ' active' : '') + '" data-filter="size:' + s + '">' + s + '</span>').join('') +
+    '<span style="width:1px;height:24px;background:#30363d;margin:0 8px;flex-shrink:0;"></span>' +
+    '<span class="size-chip all' + (activeType === 'all' ? ' active' : '') + '" data-filter="type:all">All types</span>' +
+    types.map(t => '<span class="size-chip' + (activeType === t ? ' active' : '') + '" data-filter="type:' + t + '">' + t + '</span>').join('')
+
+  let filtered = groups
+  if (activeSize !== 'all') {
+    filtered = filtered.filter(g =>
+      matchesSize(g.name, activeSize) || g.entries.some(e => matchesSize(e.name, activeSize))
+    )
+  }
+  if (activeType !== 'all') {
+    filtered = filtered.filter(g => g.name.startsWith(activeType))
+  }
+
+  const totalGroups = filtered.length
+  const totalEntries = filtered.reduce((a, g) => a + g.entries.length, 0)
+  document.getElementById('stats').textContent = totalGroups + ' group' + (totalGroups !== 1 ? 's' : '') + ', ' + totalEntries + ' entr' + (totalEntries !== 1 ? 'ies' : 'y')
+
+  const out = document.getElementById('output')
+  if (!filtered.length) {
+    out.innerHTML = '<div class="empty"><p>No groups match the selected size</p></div>'
+    return
+  }
+
+  const allEntries = filtered.flatMap(g => g.entries)
+  const colorKeys = [...new Set(allEntries.map(e => methodKey(e.name)))]
+  const colorMap = assignColors(colorKeys)
+
+  out.innerHTML = filtered.map(g => {
+    const best = Math.max(...g.entries.map(e => e.ops))
+    return `<div class="group">
+      <div class="group-header" tabindex="0" role="button">
+        <span class="arrow">&#9660;</span>
+        <span class="label">${esc(g.name)}</span>
+        <span class="count">${g.entries.length} entr${g.entries.length !== 1 ? 'ies' : 'y'}</span>
+      </div>
+      <div class="group-body">
+        ${g.entries.map(e => {
+          const pct = (e.ops / best) * 100
+          const isBest = e.ops === best
+          const color = colorMap[methodKey(e.name)]
+          return `<div class="bar-row${isBest ? ' best' : ''}">
+            <div class="bar-label" title="${esc(e.name)}">${esc(e.name)}</div>
+            <span class="bar-value">${e.ops.toLocaleString()} ops/sec  ${pct.toFixed(1)}%</span>
+            <div class="bar-track"><div class="bar" style="width:${pct}%;background:${color}"></div></div>
+          </div>`
+        }).join('')}
+      </div>
+    </div>`
+  }).join('')
+
+}
+
+function methodKey (name) {
+  let s = name.replace(/\s+\d+(?:\.\d+)?[KMGTPEZY]?B\s*$/, '').trim()
+  s = s.replace(/\s+\d+c\s*$/, '')
+  return s.split(/\s+/).slice(0, 2).join(' ') || s
+}
+
+function assignColors (keys) {
+  const map = {}
+  const palette = [
+    '#58a6ff', '#f0883e', '#a371f7', '#3fb950', '#f85149',
+    '#db6d28', '#bc8c39', '#7ee787', '#ffa198', '#d2a8ff',
+    '#79c0ff', '#56d364', '#e3b341', '#ff7b72', '#ffc01e'
+  ]
+  keys.forEach((k, i) => { map[k] = palette[i % palette.length] })
+  return map
+}
+
+function esc (s) {
+  const d = document.createElement('div')
+  d.textContent = s
+  return d.innerHTML
+}
+
+function setSize (size) {
+  activeSize = size
+  const groups = window._cachedGroups
+  if (groups) render(groups)
+}
+
+function setType (type) {
+  activeType = type
+  const groups = window._cachedGroups
+  if (groups) render(groups)
+}
+
+function parse () {
+  const text = document.getElementById('input').value
+  const groups = parseGroups(text)
+  window._cachedGroups = groups
+  activeSize = 'all'
+  activeType = 'all'
+  render(groups)
+}
+
+function loadFile (e) {
+  const file = e.target.files[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = () => {
+    document.getElementById('input').value = reader.result
+    parse()
+  }
+  reader.readAsText(file)
+  e.target.value = ''
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('parseBtn').addEventListener('click', parse)
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    document.getElementById('input').value = ''
+    document.getElementById('output').innerHTML = '<div class="empty"><p>Paste benchmark output and click Parse</p></div>'
+  })
+  document.getElementById('fileInput').addEventListener('change', loadFile)
+
+  document.getElementById('sizeFilters').addEventListener('click', e => {
+    const chip = e.target.closest('.size-chip')
+    if (!chip) return
+    const filter = chip.dataset.filter
+    if (!filter) return
+    const [kind, val] = filter.split(':')
+    if (kind === 'size') setSize(val)
+    else if (kind === 'type') setType(val)
+  })
+
+  document.getElementById('output').addEventListener('click', e => {
+    const header = e.target.closest('.group-header')
+    if (header) header.classList.toggle('collapsed')
+  })
+
+  if (document.getElementById('input').value.trim()) parse()
+})
+</script>
+</body>
+</html>

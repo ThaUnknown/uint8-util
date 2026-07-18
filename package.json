@@ -2,48 +2,47 @@
   "name": "uint8-util",
   "version": "2.2.6",
   "description": "Fastest possible buffer-like utilities for uint8.",
-  "main": "index.js",
-  "browser": "browser.js",
-  "chromeapp": "browser.js",
+  "main": "dist/_node.js",
+  "browser": "dist/browser.js",
+  "chromeapp": "dist/browser.js",
   "type": "module",
+  "packageManager": "pnpm@10.28.1",
   "scripts": {
-    "bench-node-bin2hex": "node benchmark/bin2hex.js",
-    "bench-node-hex2bin": "node benchmark/hex2bin.js",
-    "bench-node-2text": "node benchmark/arr2text.js",
-    "bench-node-2arr": "node benchmark/text2arr.js",
-    "bench-node-hex2arr": "node benchmark/hex2arr.js",
-    "bench-browser-hex2arr": "airtap --preset local -- benchmark/hex2arr.js",
-    "bench-browser-bin2hex": "airtap --preset local -- benchmark/bin2hex.js",
-    "bench-browser-hex2bin": "airtap --preset local -- benchmark/hex2bin.js",
-    "bench-browser-2text": "airtap --preset local -- benchmark/arr2text.js",
-    "bench-browser-2arr": "airtap --preset local -- benchmark/text2arr.js",
-    "bench-browser-2base": "airtap --preset local -- benchmark/arr2base.js",
-    "bench-browser-4base": "airtap --preset local -- benchmark/base2arr.js"
+    "compile": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.src.json && tsc --noEmit -p tsconfig.test.json",
+    "bench-node-all": "node test/benchmark/index.ts",
+    "bench-node-save": "node test/benchmark/index.ts > results/node.txt",
+    "bench-node-one": "node benchmark/bin2hex.js",
+    "bench-browser-all": "airtap --preset local -- benchmark/index.js",
+    "bench-browser-one": "airtap --preset local -- benchmark/hex2arr.js",
+    "test": "node --experimental-test-coverage --test test/all.test.ts"
   },
   "exports": {
     "node": {
-      "types": "./index.d.ts",
-      "import": "./_node.js"
+      "types": "./dist/_node.d.ts",
+      "import": "./dist/_node.js"
     },
     "browser": {
-      "types": "./index.d.ts",
-      "import": "./browser.js"
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.js"
     },
     "chromeapp": {
-      "types": "./index.d.ts",
-      "import": "./browser.js"
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.js"
     },
     "default": {
-      "types": "./index.d.ts",
-      "import": "./browser.js"
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.js"
     }
   },
-  "types": "./index.d.ts",
+  "types": "./dist/browser.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ThaUnknown/uint8-util.git"
   },
-  "files": ["_node.js", "browser.js", "util.js", "index.d.ts"],
+  "files": [
+    "dist"
+  ],
   "keywords": [
     "uint8",
     "buffer",
@@ -61,14 +60,14 @@
   "homepage": "https://github.com/ThaUnknown/uint8-util#readme",
   "devDependencies": {
     "@babel/core": "^7.20.5",
-    "@babel/preset-env": "^7.20.2",
     "@babel/plugin-syntax-import-assertions": "^7.20.0",
+    "@babel/preset-env": "^7.20.2",
+    "@types/node": "^26.1.1",
     "airtap": "^4.0.4",
     "airtap-manual": "^1.0.0",
+    "base64-arraybuffer": "^1.0.2",
     "babelify": "^10.0.0",
-    "benchmark": "^2.1.4"
-  },
-  "dependencies": {
-    "base64-arraybuffer": "^1.0.2"
+    "benchmark": "^2.1.4",
+    "eslint-config-standard-universal": "^1.0.10"
   }
 }

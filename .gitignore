@@ -1,2 +1,6 @@
 node_modules/
 pnpm-lock.yaml
+dist/
+dist-test/
+results/
+*.tsbuildinfo

@@ -21,21 +21,23 @@
     "bench-browser-4base": "airtap --preset local -- benchmark/base2arr.js"
   },
   "exports": {
-    "node": {
-      "types": "./index.d.ts",
-      "import": "./_node.js"
-    },
-    "browser": {
-      "types": "./index.d.ts",
-      "import": "./browser.js"
-    },
-    "chromeapp": {
-      "types": "./index.d.ts",
-      "import": "./browser.js"
-    },
-    "default": {
-      "types": "./index.d.ts",
-      "import": "./browser.js"
+    ".": {
+      "node": {
+        "types": "./index.d.ts",
+        "import": "./_node.js"
+      },
+      "browser": {
+        "types": "./index.d.ts",
+        "import": "./browser.js"
+      },
+      "chromeapp": {
+        "types": "./index.d.ts",
+        "import": "./browser.js"
+      },
+      "default": {
+        "types": "./index.d.ts",
+        "import": "./browser.js"
+      }
     }
   },
   "types": "./index.d.ts",

@@ -154,4 +154,4 @@ export function compare (a: ByteArray, b: ByteArray) {
   return a.byteLength - b.byteLength
 }
 
-export * from './util.ts'
+export * from './util.js'

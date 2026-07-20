@@ -1,6 +1,6 @@
 {
   "name": "uint8-util",
-  "version": "2.2.6",
+  "version": "2.3.0",
   "description": "Fastest possible buffer-like utilities for uint8.",
   "main": "dist/_node.js",
   "browser": "dist/browser.js",
@@ -8,35 +8,36 @@
   "type": "module",
   "packageManager": "pnpm@10.28.1",
   "scripts": {
-    "compile": "tsc -p tsconfig.json",
-    "typecheck": "tsc --noEmit -p tsconfig.src.json && tsc --noEmit -p tsconfig.test.json",
+    "prepublishOnly": "tsc -p tsconfig.base.json",
+    "compile": "tsc -p tsconfig.base.json",
+    "typecheck": "tsc --noEmit -p tsconfig.base.json && tsc --noEmit -p tsconfig.test.json",
     "bench-node-all": "node test/benchmark/index.ts",
     "bench-node-save": "node test/benchmark/index.ts > results/node.txt",
     "bench-node-one": "node benchmark/bin2hex.js",
     "bench-browser-all": "airtap --preset local -- benchmark/index.js",
     "bench-browser-one": "airtap --preset local -- benchmark/hex2arr.js",
-    "bench-vite": "vite --config vite.config.ts benchmark/vite/",
+    "bench-vite": "vite --config vite.config.ts test/benchmark/browser",
     "test": "node --experimental-test-coverage --test test/all.test.ts"
   },
   "exports": {
     "node": {
-      "types": "./dist/_node.d.ts",
-      "import": "./dist/_node.js"
+      "types": "./dist/src/browser.d.ts",
+      "import": "./dist/src/node.js"
     },
     "browser": {
-      "types": "./dist/browser.d.ts",
-      "import": "./dist/browser.js"
+      "types": "./dist/src/browser.d.ts",
+      "import": "./dist/src/browser.js"
     },
     "chromeapp": {
-      "types": "./dist/browser.d.ts",
-      "import": "./dist/browser.js"
+      "types": "./dist/src/browser.d.ts",
+      "import": "./dist/src/browser.js"
     },
     "default": {
-      "types": "./dist/browser.d.ts",
-      "import": "./dist/browser.js"
+      "types": "./dist/src/browser.d.ts",
+      "import": "./dist/src/browser.js"
     }
   },
-  "types": "./dist/browser.d.ts",
+  "types": "./dist/src/browser.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ThaUnknown/uint8-util.git"

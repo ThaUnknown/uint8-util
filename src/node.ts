@@ -1,6 +1,6 @@
 import { createHash, randomBytes as rand } from 'node:crypto'
 
-import type { HashType, HashAlgo, TypedArray, ByteArray } from './util.ts'
+import type { HashType, HashAlgo, ByteArray } from './util.ts'
 
 export const text2arr = (str: string) => {
   const buf = Buffer.from(str, 'utf8')
@@ -27,17 +27,17 @@ export const hex2bin = (hex: string) => Buffer.from(hex, 'hex').toString('binary
 export const bin2hex = (bin: string) => Buffer.from(bin, 'binary').toString('hex')
 
 export async function hash(
-  data: string | TypedArray | ArrayBuffer | DataView,
+  data: string | NodeJS.ArrayBufferView,
   format?: undefined,
   algo?: HashAlgo
 ): Promise<Uint8Array>
 export async function hash(
-  data: string | TypedArray | ArrayBuffer | DataView,
+  data: string | NodeJS.ArrayBufferView,
   format: HashType,
   algo?: HashAlgo
 ): Promise<string>
 export async function hash (
-  data: string | TypedArray | ArrayBuffer | DataView,
+  data: string | NodeJS.ArrayBufferView,
   format?: HashType,
   algo = 'sha1'
 ): Promise<Uint8Array | string> {
@@ -52,7 +52,7 @@ export async function hash (
 export const randomBytes = (size: number) => new Uint8Array(rand(size))
 
 export function compare (a: ByteArray, b: ByteArray) {
-  const min = Math.min(a.length, b.length)
+  const min = Math.min(a.byteLength, b.byteLength)
   if (min < 128) {
     for (let i = min - 1; i > -1; --i) if (a[i] !== b[i]) return a[i]! - b[i]!
     return 0
@@ -61,12 +61,12 @@ export function compare (a: ByteArray, b: ByteArray) {
 }
 
 export function equal (a: ByteArray, b: ByteArray) {
-  if (a.length !== b.length) return false
-  if (a.length < 256) {
-    for (let i = a.length - 1; i > -1; --i) if (a[i] !== b[i]) return false
+  if (a.byteLength !== b.byteLength) return false
+  if (a.byteLength < 256) {
+    for (let i = a.byteLength - 1; i > -1; --i) if (a[i] !== b[i]) return false
     return true
   }
   return Buffer.compare(a, b) === 0
 }
 
-export * from './util.ts'
+export * from './util.js'

@@ -1,7 +1,7 @@
 import { decode as b64abDecode, encode as b64abEncode } from 'base64-arraybuffer'
 
-import { arr2base, base2arr } from '../../_node.ts'
-import { arr2base as arr2baseBr, base2arr as base2arrBr } from '../../browser.ts'
+import { arr2base as arr2baseBr, base2arr as base2arrBr } from '../../src/browser.js'
+import { arr2base, base2arr } from '../../src/node.js'
 
 import { SIZES, measure, run, getData } from './_suite.ts'
 

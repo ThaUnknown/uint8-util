@@ -3,7 +3,7 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  ...config({ ...globals.node, ...globals.browser }),
+  ...config({ ...globals.node, ...globals.browser, NodeJS: false }),
   {
     ignores: ['benchmark/**']
   },

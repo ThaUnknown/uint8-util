@@ -1,4 +1,4 @@
-import { concat } from '../../_node.ts'
+import { concat } from '../../src/node.js'
 
 import { SIZES, measure, run } from './_suite.ts'
 

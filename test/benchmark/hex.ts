@@ -1,5 +1,5 @@
-import { arr2hex, hex2arr, hex2bin, bin2hex } from '../../_node.ts'
-import { arr2hex as arr2hexBr, hex2arr as hex2arrBr, bin2hex as bin2hexBr, hex2bin as hex2binBr } from '../../browser.ts'
+import { arr2hex as arr2hexBr, hex2arr as hex2arrBr, bin2hex as bin2hexBr, hex2bin as hex2binBr } from '../../src/browser.js'
+import { arr2hex, hex2arr, hex2bin, bin2hex } from '../../src/node.js'
 
 import { SIZES, measure, run, getData, getBinaryString } from './_suite.ts'
 

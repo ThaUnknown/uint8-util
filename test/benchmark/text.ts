@@ -1,5 +1,5 @@
-import { arr2text, text2arr } from '../../_node.ts'
-import { arr2text as arr2textBr, text2arr as text2arrBr } from '../../browser.ts'
+import { arr2text as arr2textBr, text2arr as text2arrBr } from '../../src/browser.js'
+import { arr2text, text2arr } from '../../src/node.js'
 
 import { SIZES, measure, run, getText } from './_suite.ts'
 

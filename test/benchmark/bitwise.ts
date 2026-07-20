@@ -1,4 +1,4 @@
-import { xor, or, and } from '../../_node.ts'
+import { xor, or, and } from '../../src/node.js'
 
 import { SIZES, measure, run } from './_suite.ts'
 
@@ -224,14 +224,14 @@ export async function benchBitwise () {
       }
     }
 
-    run(`or aligned ${size}B`, [
-      measureAligned('or lib', size, (a, b) => { or(a, b) }),
-      measureAligned('or old', size, (a, b) => { orOld(a, b) })
-    ])
+    // run(`or aligned ${size}B`, [
+    //   measureAligned('or lib', size, (a, b) => { or(a, b) }),
+    //   measureAligned('or old', size, (a, b) => { orOld(a, b) })
+    // ])
 
-    run(`and aligned ${size}B`, [
-      measureAligned('and lib', size, (a, b) => { and(a, b) }),
-      measureAligned('and old', size, (a, b) => { andOld(a, b) })
-    ])
+    // run(`and aligned ${size}B`, [
+    //   measureAligned('and lib', size, (a, b) => { and(a, b) }),
+    //   measureAligned('and old', size, (a, b) => { andOld(a, b) })
+    // ])
   }
 }

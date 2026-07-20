@@ -1,5 +1,5 @@
-import { hash, randomBytes } from '../../_node.ts'
-import { hash as hashBr, randomBytes as randomBytesBr } from '../../browser.ts'
+import { hash as hashBr, randomBytes as randomBytesBr } from '../../src/browser.js'
+import { hash, randomBytes } from '../../src/node.js'
 
 import { SIZES, measure, measureAsync, run, getData } from './_suite.ts'
 

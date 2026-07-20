@@ -11,8 +11,8 @@
   },
   "include": [
     "test/**/*.ts",
-    "_node.ts",
-    "browser.ts",
-    "util.ts"
+    "src/node.ts",
+    "src/browser.ts",
+    "src/util.ts"
   ]
 }

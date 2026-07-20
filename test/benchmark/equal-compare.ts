@@ -1,5 +1,5 @@
-import { equal, compare } from '../../_node.ts'
-import { equal as equalBr, compare as compareBr } from '../../browser.ts'
+import { equal as equalBr, compare as compareBr } from '../../src/browser.js'
+import { equal, compare } from '../../src/node.js'
 
 import { SIZES, measure, run } from './_suite.ts'
 

@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import * as crypto from 'node:crypto'
 import { describe, it } from 'node:test'
 
-import * as nodeMod from '../_node.ts'
-import * as browserMod from '../browser.ts'
+import * as browserMod from '../src/browser.js'
+import * as nodeMod from '../src/node.js'
 
 function randArr (len: number) {
   const arr = new Uint8Array(len)

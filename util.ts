@@ -15,12 +15,12 @@ export type TypedArray =
 
 export type ByteArray = Buffer | Uint8Array
 
-type Encoding = 'utf-8' | 'utf-16le' | 'latin1' | 'ascii'
+type Encoding = 'utf-8' | 'utf-16le' | 'ascii'
 export type HashType = 'hex' | 'base64'
 export type HashAlgo = 'sha-1' | 'sha-256' | 'sha-384' | 'sha-512'
 
 const decoder = new TextDecoder()
-export const arr2text = (data: ArrayBuffer | Uint8Array, enc?: Encoding): string => {
+export const arr2text = (data: AllowSharedBufferSource, enc?: Encoding): string => {
   if (!enc) return decoder.decode(data)
   const dec = new TextDecoder(enc)
   return dec.decode(data)

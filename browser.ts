@@ -2,7 +2,7 @@ import type { HashType, HashAlgo, ByteArray } from './util.ts'
 
 const alphabet = '0123456789abcdef'
 const encodeLookup: string[] = []
-const decodeLookup: number[] = []
+const decodeLookup = new Uint8Array(128) // so that it's 0 initiated, so non hex characters map to 0
 
 for (let i = 0; i < 16; ++i) {
   const i16 = i * 16
@@ -10,9 +10,10 @@ for (let i = 0; i < 16; ++i) {
     encodeLookup[i16 + j] = alphabet[i]! + alphabet[j]!
   }
   if (i < 10) {
-    decodeLookup[0x30 + i] = i
+    decodeLookup[0x30 + i] = i // '0'-'9'
   } else {
-    decodeLookup[0x61 - 10 + i] = i
+    decodeLookup[0x61 - 10 + i] = i // 'a'-'f'
+    decodeLookup[0x41 - 10 + i] = i // 'A'-'F'
   }
 }
 
@@ -86,10 +87,32 @@ export async function hash (
 
 export const randomBytes = (size: number) => crypto.getRandomValues(new Uint8Array(size))
 
-// TODO: fix this and xor
+// there's a lot of duplicating here, but inlining matters for performance, can't really use helpers without loosing a lot
 export function equal (a: ByteArray, b: ByteArray) {
-  if (a.length !== b.length) return false
-  for (let i = a.length - 1; i > -1; --i) { if (a[i] !== b[i]) return false }
+  if (a.byteLength !== b.byteLength) return false
+  const len = a.byteLength
+  if (len < 128) {
+    for (let i = 0; i < len; i++) if (a[i] !== b[i]) return false
+    return true
+  }
+
+  const words = len >> 3
+  if ((a.byteOffset & 7) === 0 && (b.byteOffset & 7) === 0) {
+    const a64 = new BigInt64Array(a.buffer, a.byteOffset, words)
+    const b64 = new BigInt64Array(b.buffer, b.byteOffset, words)
+    for (let j = 0; j < words; j++) {
+      if (a64[j] !== b64[j]) return false
+    }
+  } else {
+    const dvA = new DataView(a.buffer, a.byteOffset, len)
+    const dvB = new DataView(b.buffer, b.byteOffset, b.byteLength)
+    for (let j = 0; j < words; j++) {
+      if (dvA.getBigInt64(j << 3) !== dvB.getBigInt64(j << 3)) return false
+    }
+  }
+
+  const off = words << 3
+  for (let i = off; i < len; i++) if (a[i] !== b[i]) return false
   return true
 }
 

@@ -29,10 +29,7 @@ function equal32 (a: Uint8Array, b: Uint8Array): boolean {
     const a32 = new Uint32Array(a.buffer, a.byteOffset, a.byteLength >> 2)
     const b32 = new Uint32Array(b.buffer, b.byteOffset, b.byteLength >> 2)
     for (let i = 0; i < a32.length; i++) {
-      if (a32[i] !== b32[i]) {
-        const o = i << 2
-        for (let j = 0; j < 4; j++) { if (a[o + j] !== b[o + j]) return false }
-      }
+      if (a32[i] !== b32[i]) return false
     }
     const off = a32.length << 2
     for (let i = off; i < a.length; i++) { if (a[i] !== b[i]) return false }
@@ -47,10 +44,7 @@ function equal32Unchecked (a: Uint8Array, b: Uint8Array): boolean {
   const a32 = new Uint32Array(a.buffer, a.byteOffset, a.byteLength >> 2)
   const b32 = new Uint32Array(b.buffer, b.byteOffset, b.byteLength >> 2)
   for (let i = 0; i < a32.length; i++) {
-    if (a32[i] !== b32[i]) {
-      const o = i << 2
-      for (let j = 0; j < 4; j++) { if (a[o + j] !== b[o + j]) return false }
-    }
+    if (a32[i] !== b32[i]) return false
   }
   const off = a32.length << 2
   for (let i = off; i < a.length; i++) { if (a[i] !== b[i]) return false }
@@ -63,10 +57,7 @@ function equalDataView (a: Uint8Array, b: Uint8Array): boolean {
   const dvB = new DataView(b.buffer, b.byteOffset, b.byteLength)
   const words = a.byteLength >> 2
   for (let i = 0; i < words; i++) {
-    if (dvA.getUint32(i << 2) !== dvB.getUint32(i << 2)) {
-      const o = i << 2
-      for (let j = 0; j < 4; j++) { if (a[o + j] !== b[o + j]) return false }
-    }
+    if (dvA.getUint32(i << 2) !== dvB.getUint32(i << 2)) return false
   }
   const off = words << 2
   for (let i = off; i < a.length; i++) { if (a[i] !== b[i]) return false }
@@ -76,6 +67,47 @@ function equalDataView (a: Uint8Array, b: Uint8Array): boolean {
 function equalBuffer (a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false
   return Buffer.compare(a, b) === 0
+}
+
+function equalDataView64 (a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false
+  const dvA = new DataView(a.buffer, a.byteOffset, a.byteLength)
+  const dvB = new DataView(b.buffer, b.byteOffset, b.byteLength)
+  const words = a.byteLength >> 3
+  for (let i = 0; i < words; i++) {
+    const o = i << 3
+    if (dvA.getBigInt64(o) !== dvB.getBigInt64(o)) return false
+  }
+  const off = words << 3
+  for (let i = off; i < a.length; i++) { if (a[i] !== b[i]) return false }
+  return true
+}
+
+function equalHybrid (a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false
+  if (a.length < 128) {
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false
+    return true
+  }
+
+  const words = a.length >> 3
+  if ((a.byteOffset & 7) === 0 && (b.byteOffset & 7) === 0) {
+    const a64 = new BigInt64Array(a.buffer, a.byteOffset, words)
+    const b64 = new BigInt64Array(b.buffer, b.byteOffset, words)
+    for (let j = 0; j < words; j++) {
+      if (a64[j] !== b64[j]) return false
+    }
+  } else {
+    const dvA = new DataView(a.buffer, a.byteOffset, a.byteLength)
+    const dvB = new DataView(b.buffer, b.byteOffset, b.byteLength)
+    for (let j = 0; j < words; j++) {
+      if (dvA.getBigInt64(j << 3) !== dvB.getBigInt64(j << 3)) return false
+    }
+  }
+
+  const off = words << 3
+  for (let i = off; i < a.length; i++) { if (a[i] !== b[i]) return false }
+  return true
 }
 
 function compareByte (a: Uint8Array, b: Uint8Array): number {
@@ -181,6 +213,10 @@ export async function benchEqual () {
         results.push({ name: `equal 32un ${label} ${size}B`, ops: measure(() => equal32Unchecked(a2, b2)) })
         results.push({ name: `equal dv ${label} ${size}B`, ops: measure(() => equalDataView(a2, b2)) })
       }
+      if (size >= 8) {
+        results.push({ name: `equal dv64 ${label} ${size}B`, ops: measure(() => equalDataView64(a2, b2)) })
+        results.push({ name: `equal hybrid ${label} ${size}B`, ops: measure(() => equalHybrid(a2, b2)) })
+      }
       results.push({ name: `equal buf ${label} ${size}B`, ops: measure(() => equalBuffer(a2, b2)) })
       run(`equal ${label} ${size}B`, results)
 
@@ -193,6 +229,10 @@ export async function benchEqual () {
         if (size >= 4) {
           unalignResults.push({ name: `equal 32 unalign ${label} ${size}B`, ops: measure(() => equal32(aU, bU)) })
           unalignResults.push({ name: `equal dv unalign ${label} ${size}B`, ops: measure(() => equalDataView(aU, bU)) })
+        }
+        if (size >= 8) {
+          unalignResults.push({ name: `equal dv64 unalign ${label} ${size}B`, ops: measure(() => equalDataView64(aU, bU)) })
+          unalignResults.push({ name: `equal hybrid unalign ${label} ${size}B`, ops: measure(() => equalHybrid(aU, bU)) })
         }
         unalignResults.push({ name: `equal buf unalign ${label} ${size}B`, ops: measure(() => equalBuffer(aU, bU)) })
         run(`equal unalign ${label} ${size}B`, unalignResults)

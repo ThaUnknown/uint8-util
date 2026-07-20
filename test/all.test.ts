@@ -39,7 +39,6 @@ describe('arr2hex / hex2arr', () => {
     const arr = nodeMod.hex2arr('abcdef0123456789')
     assert.deepEqual([...arr], [0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, 0x89])
   })
-
 })
 
 // ------- concat -------
@@ -143,29 +142,6 @@ describe('equal', () => {
     b[2] = 0
     assert.ok(!nodeMod.equal(a, b))
   })
-
-  it('works on number[]', () => {
-    assert.ok(nodeMod.equal([1, 2, 3], [1, 2, 3]))
-    assert.ok(!nodeMod.equal([1, 2, 3], [1, 2, 4]))
-  })
-
-  it('mixed typed array and number[] — large', () => {
-    const a = new Uint8Array([...Array(100)].map(() => 42))
-    const b: number[] = Array.from(a)
-    assert.ok(nodeMod.equal(a, b))
-    b[50] = 0
-    assert.ok(!nodeMod.equal(a, b))
-  })
-
-  it('large number[] — both non-view', () => {
-    const a: number[] = Array.from({ length: 100 }, () => 42)
-    const b: number[] = a.slice()
-    assert.ok(nodeMod.equal(a, b))
-    b[50] = 0
-    assert.ok(!nodeMod.equal(a, b))
-  })
-
-
 })
 
 // ------- compare -------
@@ -233,28 +209,6 @@ describe('compare', () => {
     const a = new Uint8Array([10, 20, 30])
     const b = new Uint8Array([10, 25, 30])
     assert.ok(nodeMod.compare(a, b) < 0)
-  })
-
-  it('works on number[]', () => {
-    assert.equal(nodeMod.compare([1, 2, 3], [1, 2, 3]), 0)
-    assert.ok(nodeMod.compare([1, 2, 3], [1, 2, 4]) < 0)
-    assert.ok(nodeMod.compare([1, 2, 4], [1, 2, 3]) > 0)
-  })
-
-  it('mixed typed array and number[] — large', () => {
-    const a = new Uint8Array([...Array(100)].map(() => 42))
-    const b: number[] = Array.from(a)
-    assert.equal(nodeMod.compare(a, b), 0)
-    b[50] = 41
-    assert.ok(nodeMod.compare(a, b) > 0)
-  })
-
-  it('large number[] — both non-view', () => {
-    const a: number[] = Array.from({ length: 100 }, () => 42)
-    const b: number[] = a.slice()
-    assert.equal(nodeMod.compare(a, b), 0)
-    b[50] = 41
-    assert.ok(nodeMod.compare(a, b) > 0)
   })
 
   it('different lengths (min < 128) — prefix match returns 0 (node behavior)', () => {
@@ -726,11 +680,6 @@ describe('Node: arr2text / text2arr', () => {
     assert.equal(nodeMod.arr2text(arr, 'utf-16le'), Buffer.from(arr).toString('utf16le'))
   })
 
-  it('arr2text with latin1 encoding', () => {
-    const arr = randArr(20)
-    assert.equal(nodeMod.arr2text(arr, 'latin1'), Buffer.from(arr).toString('latin1'))
-  })
-
   it('arr2text with ascii encoding — low bytes (0-127)', () => {
     const arr = new Uint8Array([65, 66, 67, 0, 31, 127])
     assert.equal(nodeMod.arr2text(arr, 'ascii'), Buffer.from(arr).toString('ascii'))
@@ -1035,12 +984,6 @@ describe('shared: equal (browser)', () => {
     assert.ok(!browserMod.equal(a, b))
   })
 
-  it('fallback — number[] input (non-view path)', () => {
-    const a: number[] = [1, 2, 3, 4, 5]
-    assert.ok(browserMod.equal(a, a.slice()))
-    assert.ok(!browserMod.equal(a, [1, 2, 0, 4, 5]))
-  })
-
   // -------- regression: same-buffer views (direct indexing) --------
 
   it('same-buffer — aligned, equal', () => {
@@ -1167,12 +1110,6 @@ describe('shared: compare (browser)', () => {
     const a = new Uint8Array([1, 2, 3])
     assert.equal(browserMod.compare(a, new Uint8Array([1, 2, 3, 4])), -1)
     assert.equal(browserMod.compare(new Uint8Array([1, 2, 3, 4]), a), 1)
-  })
-
-  it('fallback — number[] input (non-view path)', () => {
-    const a: number[] = [1, 2, 3, 4, 5]
-    assert.equal(browserMod.compare(a, a.slice()), 0)
-    assert.ok(browserMod.compare(a, [1, 2, 0, 4, 5]) > 0)
   })
 
   // -------- regression: same-buffer views (direct indexing) --------

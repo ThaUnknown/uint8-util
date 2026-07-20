@@ -8,17 +8,17 @@ import { benchArr2hex, benchHex2arr, benchBin2hex, benchHex2bin } from './hex.ts
 import { benchUnroll } from './unroll.ts'
 
 const suites = [
-  benchArr2hex,
-  benchHex2arr
+  // benchArr2hex,
+  // benchHex2arr
   // benchBin2hex,
   // benchHex2bin,
   // benchArr2text,
   // benchText2arr,
   // benchArr2base,
   // benchBase2arr
-  // benchEqual,
+  // benchEqual
   // benchCompare
-  // benchBitwise
+  benchBitwise
   // benchConcat,
   // benchHash,
   // benchRandomBytes,

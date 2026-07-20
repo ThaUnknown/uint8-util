@@ -6,6 +6,8 @@ const encodeLookup: string[] = []
 const alphabet = '0123456789abcdef'
 for (let i = 0; i < 256; i++) encodeLookup[i] = alphabet[i >> 4 & 0xf] + alphabet[i & 0xf]
 
+
+
 function cp (size: number): Uint8Array { return Uint8Array.from(getData(size)) }
 function cp2 (size: number): [Uint8Array, Uint8Array] { return [cp(size), cp(size)] }
 
@@ -67,6 +69,25 @@ export async function benchUnroll () {
     const results: Array<{ name: string, ops: number }> = []
 
     results.push({ name: `arr2hex original   ${size}B`, ops: measure(() => arr2hex(cp(size))) })
+    results.push({
+      name: `arr2hex simple     ${size}B`,
+      ops: measure(() => {
+        const d = cp(size); const len = d.length; let s = ''
+        for (let i = 0; i < len; ++i) s += encodeLookup[d[i]!]!
+        return s
+      })
+    })
+    results.push({
+      name: `arr2hex unroll2    ${size}B`,
+      ops: measure(() => {
+        const d = cp(size); const len = d.length; let s = ''; let i = 0
+        while (i + 2 <= len) {
+          s += encodeLookup[d[i++]] + encodeLookup[d[i++]]
+        }
+        while (i < len) s += encodeLookup[d[i++]]
+        return s
+      })
+    })
     results.push({
       name: `arr2hex unroll4    ${size}B`,
       ops: measure(() => {

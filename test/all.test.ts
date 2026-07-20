@@ -40,9 +40,6 @@ describe('arr2hex / hex2arr', () => {
     assert.deepEqual([...arr], [0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, 0x89])
   })
 
-  it('arr2hex works on number[]', () => {
-    assert.equal(nodeMod.arr2hex([0, 255, 128]), '00ff80')
-  })
 })
 
 // ------- concat -------
@@ -259,6 +256,20 @@ describe('compare', () => {
     b[50] = 41
     assert.ok(nodeMod.compare(a, b) > 0)
   })
+
+  it('different lengths (min < 128) — prefix match returns 0 (node behavior)', () => {
+    const a = new Uint8Array([1, 2, 3])
+    const b = new Uint8Array([1, 2, 3, 4])
+    assert.equal(nodeMod.compare(a, b), 0)
+    assert.equal(nodeMod.compare(b, a), 0)
+  })
+
+  it('different lengths (min >= 128) — uses Buffer.compare', () => {
+    const a = randArr(200)
+    const b = new Uint8Array([...a, 0])
+    assert.equal(nodeMod.compare(a, b), Buffer.compare(a, b))
+    assert.equal(nodeMod.compare(b, a), Buffer.compare(b, a))
+  })
 })
 
 // ------- xor / or / and -------
@@ -314,6 +325,16 @@ describe('xor', () => {
     assert.deepEqual([...a], [...expected])
   })
 
+  it('large arrays — differing but same-alignment byteOffsets (aOff=1, bOff=9)', () => {
+    const buf = new Uint8Array(300)
+    const a = new Uint8Array(buf.buffer, 1, 200)
+    const b = new Uint8Array(buf.buffer, 9, 200)
+    for (let i = 0; i < 200; i++) { a[i] = i; b[i] = i ^ 0xff }
+    const expected = a.map((v, i) => v ^ b[i]!)
+    nodeMod.xor(a, b)
+    assert.deepEqual([...a], [...expected])
+  })
+
   it('empty', () => {
     const a = new Uint8Array(0)
     nodeMod.xor(a, a)
@@ -342,6 +363,81 @@ describe('xor', () => {
     const expected = a.map((v, i) => v ^ b[i])
     nodeMod.xor(a, b)
     assert.deepEqual([...a], [...expected])
+  })
+
+  // -------- regression: same-buffer views (direct indexing) --------
+
+  it('same-buffer — aligned, equal', () => {
+    const buf = new Uint8Array([...randArr(300)]); buf.fill(0xaa)
+    const a = new Uint8Array(buf.buffer, 0, 150)
+    const b = new Uint8Array(buf.buffer, 0, 150)
+    const expected = a.map((v, i) => v ^ b[i]!)
+    nodeMod.xor(a, b)
+    assert.deepEqual([...a], [...expected])
+  })
+
+  it('same-buffer — unaligned same offset', () => {
+    const buf = new Uint8Array([...randArr(300)]); buf.fill(0xaa)
+    const a = new Uint8Array(buf.buffer, 5, 150)
+    const b = new Uint8Array(buf.buffer, 5, 150)
+    const expected = a.map((v, i) => v ^ b[i]!)
+    nodeMod.xor(a, b)
+    assert.deepEqual([...a], [...expected])
+  })
+
+  it('same-buffer — unaligned diff offset, same alignment', () => {
+    const buf = new Uint8Array([...randArr(400)])
+    const a = new Uint8Array(buf.buffer, 1, 200)
+    const b = new Uint8Array(buf.buffer, 9, 200)
+    const expected = a.map((v, i) => v ^ b[i]!)
+    nodeMod.xor(a, b)
+    assert.deepEqual([...a], [...expected])
+  })
+
+  it('same-buffer — unaligned diff offset, same alignment, diff in remainder', () => {
+    const buf = new Uint8Array([...randArr(400)])
+    const a = new Uint8Array(buf.buffer, 1, 135)
+    const b = new Uint8Array(buf.buffer, 9, 135)
+    const expected = a.map((v, i) => v ^ b[i]!)
+    nodeMod.xor(a, b)
+    assert.deepEqual([...a], [...expected])
+  })
+
+  it('unaligned — prefix offset 1-7', () => {
+    for (const offset of [0, 1, 2, 3, 4, 5, 6, 7] as const) {
+      const buf = new Uint8Array([...randArr(300)])
+      const a = new Uint8Array(buf.buffer, offset, 150); a.fill(0xaa)
+      const b = new Uint8Array(buf.slice().buffer, offset, 150); b.fill(0x55)
+      const expected = a.map((v, i) => v ^ b[i]!)
+      nodeMod.xor(a, b)
+      assert.deepEqual([...a], [...expected], `offset=${offset}`)
+    }
+  })
+
+  it('unaligned — diff at each prefix byte position 0-6', () => {
+    for (const offset of [1, 2, 3, 4, 5, 6, 7] as const) {
+      for (const diffPos of [0, 1, 2, 3, 4, 5, 6]) {
+        if (diffPos >= 8 - offset) continue
+        const buf = new Uint8Array(300)
+        const a = new Uint8Array(buf.buffer, offset, 150); a.fill(0xaa)
+        const b = new Uint8Array(buf.slice().buffer, offset, 150); b.fill(0xbb)
+        b[diffPos] = 0x55
+        const expected = a.map((v, i) => v ^ b[i]!)
+        nodeMod.xor(a, b)
+        assert.deepEqual([...a], [...expected], `offset=${offset} diffPos=${diffPos}`)
+      }
+    }
+  })
+
+  it('64-bit path — remainder lengths 1-7', () => {
+    for (const rem of [1, 2, 3, 4, 5, 6, 7]) {
+      const len = 128 + rem
+      const a = randArr(len)
+      const b = randArr(len)
+      const expected = a.map((v, i) => v ^ b[i]!)
+      nodeMod.xor(a, b)
+      assert.deepEqual([...a], [...expected], `remainder=${rem}`)
+    }
   })
 })
 
@@ -389,6 +485,16 @@ describe('or', () => {
     assert.deepEqual([...a], [...expected])
   })
 
+  it('large arrays — differing but same-alignment byteOffsets (aOff=1, bOff=9)', () => {
+    const buf = new Uint8Array(300)
+    const a = new Uint8Array(buf.buffer, 1, 200)
+    const b = new Uint8Array(buf.buffer, 9, 200)
+    for (let i = 0; i < 200; i++) { a[i] = i; b[i] = i ^ 0xff }
+    const expected = a.map((v, i) => v | b[i]!)
+    nodeMod.or(a, b)
+    assert.deepEqual([...a], [...expected])
+  })
+
   it('works on number[]', () => {
     const a = [0b1010, 0b1111]
     const b = [0b0101, 0b0000]
@@ -402,6 +508,66 @@ describe('or', () => {
     const expected = a.map((v, i) => v | b[i])
     nodeMod.or(a, b)
     assert.deepEqual([...a], [...expected])
+  })
+
+  // -------- regression: same-buffer views (direct indexing) --------
+
+  it('same-buffer — aligned', () => {
+    const buf = new Uint8Array([...randArr(300)]); buf.fill(0xaa)
+    const a = new Uint8Array(buf.buffer, 0, 150)
+    const b = new Uint8Array(buf.buffer, 0, 150)
+    const expected = a.map((v, i) => v | b[i]!)
+    nodeMod.or(a, b)
+    assert.deepEqual([...a], [...expected])
+  })
+
+  it('same-buffer — unaligned same offset', () => {
+    const buf = new Uint8Array([...randArr(300)]); buf.fill(0xaa)
+    const a = new Uint8Array(buf.buffer, 5, 150)
+    const b = new Uint8Array(buf.buffer, 5, 150)
+    const expected = a.map((v, i) => v | b[i]!)
+    nodeMod.or(a, b)
+    assert.deepEqual([...a], [...expected])
+  })
+
+  it('same-buffer — unaligned diff offset, same alignment', () => {
+    const buf = new Uint8Array([...randArr(400)])
+    const a = new Uint8Array(buf.buffer, 1, 200)
+    const b = new Uint8Array(buf.buffer, 9, 200)
+    const expected = a.map((v, i) => v | b[i]!)
+    nodeMod.or(a, b)
+    assert.deepEqual([...a], [...expected])
+  })
+
+  it('same-buffer — unaligned diff offset, same alignment, diff in remainder', () => {
+    const buf = new Uint8Array([...randArr(400)])
+    const a = new Uint8Array(buf.buffer, 1, 135)
+    const b = new Uint8Array(buf.buffer, 9, 135)
+    const expected = a.map((v, i) => v | b[i]!)
+    nodeMod.or(a, b)
+    assert.deepEqual([...a], [...expected])
+  })
+
+  it('unaligned — prefix offset 1-7', () => {
+    for (const offset of [0, 1, 2, 3, 4, 5, 6, 7] as const) {
+      const buf = new Uint8Array([...randArr(300)])
+      const a = new Uint8Array(buf.buffer, offset, 150); a.fill(0xaa)
+      const b = new Uint8Array(buf.slice().buffer, offset, 150); b.fill(0x55)
+      const expected = a.map((v, i) => v | b[i]!)
+      nodeMod.or(a, b)
+      assert.deepEqual([...a], [...expected], `offset=${offset}`)
+    }
+  })
+
+  it('64-bit path — remainder lengths 1-7', () => {
+    for (const rem of [1, 2, 3, 4, 5, 6, 7]) {
+      const len = 128 + rem
+      const a = randArr(len)
+      const b = randArr(len)
+      const expected = a.map((v, i) => v | b[i]!)
+      nodeMod.or(a, b)
+      assert.deepEqual([...a], [...expected], `remainder=${rem}`)
+    }
   })
 })
 
@@ -449,6 +615,16 @@ describe('and', () => {
     assert.deepEqual([...a], [...expected])
   })
 
+  it('large arrays — differing but same-alignment byteOffsets (aOff=1, bOff=9)', () => {
+    const buf = new Uint8Array(300)
+    const a = new Uint8Array(buf.buffer, 1, 200)
+    const b = new Uint8Array(buf.buffer, 9, 200)
+    for (let i = 0; i < 200; i++) { a[i] = i; b[i] = i ^ 0xff }
+    const expected = a.map((v, i) => v & b[i]!)
+    nodeMod.and(a, b)
+    assert.deepEqual([...a], [...expected])
+  })
+
   it('works on number[]', () => {
     const a = [0b1010, 0b1111]
     const b = [0b0110, 0b0001]
@@ -462,6 +638,66 @@ describe('and', () => {
     const expected = a.map((v, i) => v & b[i])
     nodeMod.and(a, b)
     assert.deepEqual([...a], [...expected])
+  })
+
+  // -------- regression: same-buffer views (direct indexing) --------
+
+  it('same-buffer — aligned', () => {
+    const buf = new Uint8Array([...randArr(300)]); buf.fill(0xaa)
+    const a = new Uint8Array(buf.buffer, 0, 150)
+    const b = new Uint8Array(buf.buffer, 0, 150)
+    const expected = a.map((v, i) => v & b[i]!)
+    nodeMod.and(a, b)
+    assert.deepEqual([...a], [...expected])
+  })
+
+  it('same-buffer — unaligned same offset', () => {
+    const buf = new Uint8Array([...randArr(300)]); buf.fill(0xaa)
+    const a = new Uint8Array(buf.buffer, 5, 150)
+    const b = new Uint8Array(buf.buffer, 5, 150)
+    const expected = a.map((v, i) => v & b[i]!)
+    nodeMod.and(a, b)
+    assert.deepEqual([...a], [...expected])
+  })
+
+  it('same-buffer — unaligned diff offset, same alignment', () => {
+    const buf = new Uint8Array([...randArr(400)])
+    const a = new Uint8Array(buf.buffer, 1, 200)
+    const b = new Uint8Array(buf.buffer, 9, 200)
+    const expected = a.map((v, i) => v & b[i]!)
+    nodeMod.and(a, b)
+    assert.deepEqual([...a], [...expected])
+  })
+
+  it('same-buffer — unaligned diff offset, same alignment, diff in remainder', () => {
+    const buf = new Uint8Array([...randArr(400)])
+    const a = new Uint8Array(buf.buffer, 1, 135)
+    const b = new Uint8Array(buf.buffer, 9, 135)
+    const expected = a.map((v, i) => v & b[i]!)
+    nodeMod.and(a, b)
+    assert.deepEqual([...a], [...expected])
+  })
+
+  it('unaligned — prefix offset 1-7', () => {
+    for (const offset of [0, 1, 2, 3, 4, 5, 6, 7] as const) {
+      const buf = new Uint8Array([...randArr(300)])
+      const a = new Uint8Array(buf.buffer, offset, 150); a.fill(0xaa)
+      const b = new Uint8Array(buf.slice().buffer, offset, 150); b.fill(0x55)
+      const expected = a.map((v, i) => v & b[i]!)
+      nodeMod.and(a, b)
+      assert.deepEqual([...a], [...expected], `offset=${offset}`)
+    }
+  })
+
+  it('64-bit path — remainder lengths 1-7', () => {
+    for (const rem of [1, 2, 3, 4, 5, 6, 7]) {
+      const len = 128 + rem
+      const a = randArr(len)
+      const b = randArr(len)
+      const expected = a.map((v, i) => v & b[i]!)
+      nodeMod.and(a, b)
+      assert.deepEqual([...a], [...expected], `remainder=${rem}`)
+    }
   })
 })
 
@@ -626,6 +862,17 @@ describe('Node: randomBytes', () => {
 
 // ======== BROWSER MODULE ========
 
+describe('Browser: arr2hex / hex2arr', () => {
+  it('odd-length array hits fallback loop', () => {
+    const arr = new Uint8Array([0, 1, 2])
+    assert.equal(browserMod.arr2hex(arr), '000102')
+  })
+
+  it('hex2arr odd-length hex string hits fallback loop', () => {
+    assert.deepEqual([...browserMod.hex2arr('aabb')], [0xaa, 0xbb])
+  })
+})
+
 describe('Browser: arr2text / text2arr', () => {
   it('text2arr roundtrip', () => {
     const str = 'hello world ñoño 🎉'
@@ -737,6 +984,130 @@ describe('shared: equal (browser)', () => {
     const b = a.slice(); b[0]!++
     assert.equal(browserMod.equal(a, b), nodeMod.equal(a, b))
   })
+
+  it('64-bit path — diff in word region', () => {
+    const a = randArr(200); const b = a.slice(); b[50]!++
+    assert.ok(!browserMod.equal(a, b))
+  })
+
+  it('64-bit path — diff in remainder after words', () => {
+    const a = randArr(135); const b = a.slice(); b[130]!++
+    assert.ok(!browserMod.equal(a, b))
+  })
+
+  it('64-bit path — unaligned (byteOffset & 7 !== 0)', () => {
+    const buf = new ArrayBuffer(300)
+    const a = new Uint8Array(buf, 1, 150); a.fill(0xaa)
+    const b = new Uint8Array(buf.slice(0), 1, 150); b.fill(0xaa)
+    assert.ok(browserMod.equal(a, b))
+  })
+
+  it('64-bit path — unaligned diff in prefix bytes', () => {
+    const buf = new ArrayBuffer(300)
+    const a = new Uint8Array(buf, 1, 150); a.fill(0xaa)
+    const b = new Uint8Array(buf.slice(0), 1, 150); b.fill(0xaa); b[0] = 0
+    assert.ok(!browserMod.equal(a, b))
+  })
+
+  it('64-bit path — unaligned diff in word region', () => {
+    const buf = new ArrayBuffer(300)
+    const a = new Uint8Array(buf, 1, 150); a.fill(0xaa); a[50] = 0x55
+    const b = new Uint8Array(buf.slice(0), 1, 150); b.fill(0xaa); b[50] = 0xaa
+    assert.ok(!browserMod.equal(a, b))
+  })
+
+  it('64-bit path — unaligned diff in remainder', () => {
+    const buf = new ArrayBuffer(300)
+    const a = new Uint8Array(buf, 1, 135); a.fill(0xaa); a[130] = 0x55
+    const b = new Uint8Array(buf.slice(0), 1, 135); b.fill(0xaa)
+    assert.ok(!browserMod.equal(a, b))
+  })
+
+  it('64-bit path — different-length arrays return false', () => {
+    const a = randArr(200)
+    assert.ok(!browserMod.equal(a, new Uint8Array(100)))
+  })
+
+  it('fallback — length <= 128 (byte loop)', () => {
+    const a = new Uint8Array([1, 2, 3, 4, 5])
+    assert.ok(browserMod.equal(a, a.slice()))
+    const b = a.slice(); b[2] = 0
+    assert.ok(!browserMod.equal(a, b))
+  })
+
+  it('fallback — number[] input (non-view path)', () => {
+    const a: number[] = [1, 2, 3, 4, 5]
+    assert.ok(browserMod.equal(a, a.slice()))
+    assert.ok(!browserMod.equal(a, [1, 2, 0, 4, 5]))
+  })
+
+  // -------- regression: same-buffer views (direct indexing) --------
+
+  it('same-buffer — aligned, equal', () => {
+    const buf = new Uint8Array(300); buf.fill(0xaa)
+    const a = new Uint8Array(buf.buffer, 0, 150)
+    const b = new Uint8Array(buf.buffer, 0, 150)
+    assert.ok(browserMod.equal(a, b))
+  })
+
+  it('same-buffer — unaligned same offset, equal', () => {
+    const buf = new Uint8Array(300); buf.fill(0xaa)
+    const a = new Uint8Array(buf.buffer, 5, 150)
+    const b = new Uint8Array(buf.buffer, 5, 150)
+    assert.ok(browserMod.equal(a, b))
+  })
+
+  it('same-buffer — unaligned same offset, diff (separate buffers)', () => {
+    const buf = new Uint8Array(300)
+    const a = new Uint8Array(buf.buffer, 5, 150); a.fill(0xaa)
+    const b = new Uint8Array(buf.slice().buffer, 5, 150); b.fill(0xaa); b[3] = 0x55
+    assert.ok(!browserMod.equal(a, b))
+    const c = new Uint8Array(buf.slice().buffer, 5, 150); c.fill(0xaa); c[50] = 0x55
+    assert.ok(!browserMod.equal(a, c))
+  })
+
+  it('same-buffer — unaligned same offset, diff in remainder (separate buffers)', () => {
+    const buf = new Uint8Array(300)
+    const a = new Uint8Array(buf.buffer, 3, 135); a.fill(0xaa); a[130] = 0x55
+    const b = new Uint8Array(buf.slice().buffer, 3, 135); b.fill(0xaa)
+    assert.ok(!browserMod.equal(a, b))
+  })
+
+  // -------- regression: offset 1-7 prefix with diff at each prefix position --------
+
+  it('unaligned — diff at each prefix byte position 0-6', () => {
+    for (const offset of [1, 2, 3, 4, 5, 6, 7] as const) {
+      for (const diffPos of [0, 1, 2, 3, 4, 5, 6]) {
+        if (diffPos >= 8 - offset) continue
+        const buf = new Uint8Array(300)
+        const a = new Uint8Array(buf.buffer, offset, 150); a.fill(0xaa)
+        const b = new Uint8Array(buf.slice().buffer, offset, 150); b.fill(0xaa); b[diffPos] = 0x55
+        assert.ok(!browserMod.equal(a, b), `offset=${offset} diffPos=${diffPos}`)
+      }
+    }
+  })
+
+  // -------- regression: diff at each of the 8 byte positions within a word --------
+
+  it('64-bit path — diff at each byte position 0-7 inside a word', () => {
+    for (let pos = 0; pos < 8; pos++) {
+      const a = randArr(200); const b = a.slice()
+      const wordStart = 48
+      b[wordStart + pos] = a[wordStart + pos]! ^ 0xff
+      assert.ok(!browserMod.equal(a, b), `bytePos=${pos}`)
+    }
+  })
+
+  // -------- regression: various remainder lengths 1-7 --------
+
+  it('64-bit path — remainder lengths 1-7', () => {
+    for (const rem of [1, 2, 3, 4, 5, 6, 7]) {
+      const len = 128 + rem
+      const a = randArr(len)
+      const b = a.slice(); b[len - 1]!++
+      assert.ok(!browserMod.equal(a, b), `remainder=${rem}`)
+    }
+  })
 })
 
 describe('shared: compare (browser)', () => {
@@ -746,18 +1117,144 @@ describe('shared: compare (browser)', () => {
     const b = a.slice(); b[100]!--
     assert.ok(browserMod.compare(a, b) > 0)
   })
+
+  it('64-bit path — diff in word region', () => {
+    const a = randArr(200); const b = a.slice(); b[50]!++
+    assert.ok(browserMod.compare(a, b) !== 0)
+  })
+
+  it('64-bit path — diff in remainder after words', () => {
+    const a = randArr(135); const b = a.slice(); b[130]!++
+    assert.ok(browserMod.compare(a, b) !== 0)
+  })
+
+  it('64-bit path — unaligned (byteOffset & 7 !== 0)', () => {
+    const buf = new ArrayBuffer(300)
+    const a = new Uint8Array(buf, 1, 150); a.fill(0xaa)
+    const b = new Uint8Array(buf.slice(0), 1, 150); b.fill(0xaa)
+    assert.equal(browserMod.compare(a, b), 0)
+  })
+
+  it('64-bit path — unaligned diff in prefix bytes', () => {
+    const buf = new ArrayBuffer(300)
+    const a = new Uint8Array(buf, 1, 150); a.fill(0xaa)
+    const b = new Uint8Array(buf.slice(0), 1, 150); b.fill(0xaa); b[0] = 0
+    assert.ok(browserMod.compare(a, b) !== 0)
+  })
+
+  it('64-bit path — unaligned diff in word region', () => {
+    const buf = new ArrayBuffer(300)
+    const a = new Uint8Array(buf, 1, 150); a.fill(0xaa); a[50] = 0x55
+    const b = new Uint8Array(buf.slice(0), 1, 150); b.fill(0xaa)
+    assert.ok(browserMod.compare(a, b) !== 0)
+  })
+
+  it('64-bit path — unaligned diff in remainder', () => {
+    const buf = new ArrayBuffer(300)
+    const a = new Uint8Array(buf, 1, 135); a.fill(0xaa); a[130] = 0x55
+    const b = new Uint8Array(buf.slice(0), 1, 135); b.fill(0xaa)
+    assert.ok(browserMod.compare(a, b) !== 0)
+  })
+
+  it('64-bit path — a is prefix of b (different lengths)', () => {
+    const a = new Uint8Array(200); a.fill(0xaa)
+    const b = new Uint8Array(210); b.fill(0xaa)
+    assert.equal(browserMod.compare(a, b), -10)
+    assert.equal(browserMod.compare(b, a), 10)
+  })
+
+  it('fallback — different lengths (len <= 128)', () => {
+    const a = new Uint8Array([1, 2, 3])
+    assert.equal(browserMod.compare(a, new Uint8Array([1, 2, 3, 4])), -1)
+    assert.equal(browserMod.compare(new Uint8Array([1, 2, 3, 4]), a), 1)
+  })
+
+  it('fallback — number[] input (non-view path)', () => {
+    const a: number[] = [1, 2, 3, 4, 5]
+    assert.equal(browserMod.compare(a, a.slice()), 0)
+    assert.ok(browserMod.compare(a, [1, 2, 0, 4, 5]) > 0)
+  })
+
+  // -------- regression: same-buffer views (direct indexing) --------
+
+  it('same-buffer — aligned, equal', () => {
+    const buf = new Uint8Array(300); buf.fill(0xaa)
+    const a = new Uint8Array(buf.buffer, 0, 150)
+    const b = new Uint8Array(buf.buffer, 0, 150)
+    assert.equal(browserMod.compare(a, b), 0)
+  })
+
+  it('same-buffer — unaligned same offset, equal', () => {
+    const buf = new Uint8Array(300); buf.fill(0xaa)
+    const a = new Uint8Array(buf.buffer, 5, 150)
+    const b = new Uint8Array(buf.buffer, 5, 150)
+    assert.equal(browserMod.compare(a, b), 0)
+  })
+
+  it('same-buffer — unaligned same offset, diff (separate buffers)', () => {
+    const buf = new Uint8Array(300)
+    const a = new Uint8Array(buf.buffer, 5, 150); a.fill(0xbb)
+    const b = new Uint8Array(buf.slice().buffer, 5, 150); b.fill(0xbb); b[3] = 0x55
+    assert.ok(browserMod.compare(a, b) !== 0)
+    const c = new Uint8Array(buf.slice().buffer, 5, 150); c.fill(0xbb); c[50] = 0x55
+    assert.ok(browserMod.compare(a, c) !== 0)
+  })
+
+  it('same-buffer — unaligned same offset, diff in remainder (separate buffers)', () => {
+    const buf = new Uint8Array(300)
+    const a = new Uint8Array(buf.buffer, 3, 135); a.fill(0xbb); a[130] = 0x55
+    const b = new Uint8Array(buf.slice().buffer, 3, 135); b.fill(0xbb)
+    assert.ok(browserMod.compare(a, b) !== 0)
+  })
+
+  // -------- regression: offset 1-7 prefix with diff at each prefix position --------
+
+  it('unaligned — diff at each prefix byte position 0-6', () => {
+    for (const offset of [1, 2, 3, 4, 5, 6, 7] as const) {
+      for (const diffPos of [0, 1, 2, 3, 4, 5, 6]) {
+        if (diffPos >= 8 - offset) continue
+        const buf = new Uint8Array(300)
+        const a = new Uint8Array(buf.buffer, offset, 150); a.fill(0xbb)
+        const b = new Uint8Array(buf.slice().buffer, offset, 150); b.fill(0xbb); b[diffPos] = 0x55
+        assert.ok(browserMod.compare(a, b) !== 0, `offset=${offset} diffPos=${diffPos}`)
+        assert.ok(browserMod.compare(b, a) !== 0, `offset=${offset} diffPos=${diffPos} reversed`)
+      }
+    }
+  })
+
+  // -------- regression: diff at each of the 8 byte positions within a word --------
+
+  it('64-bit path — diff at each byte position 0-7 inside a word', () => {
+    for (let pos = 0; pos < 8; pos++) {
+      const a = randArr(200); const b = a.slice()
+      const wordStart = 48
+      b[wordStart + pos] = a[wordStart + pos]! ^ 0xff
+      assert.ok(browserMod.compare(a, b) !== 0, `bytePos=${pos}`)
+    }
+  })
+
+  // -------- regression: various remainder lengths 1-7 --------
+
+  it('64-bit path — remainder lengths 1-7', () => {
+    for (const rem of [1, 2, 3, 4, 5, 6, 7]) {
+      const len = 128 + rem
+      const a = randArr(len)
+      const b = a.slice(); b[len - 1]!++
+      assert.ok(browserMod.compare(a, b) !== 0, `remainder=${rem}`)
+    }
+  })
 })
 
 describe('exports', () => {
   it('node module exports all expected functions', () => {
-    const expected = ['arr2text', 'text2arr', 'arr2base', 'base2arr', 'hex2bin', 'bin2hex', 'hash', 'randomBytes', 'arr2hex', 'hex2arr', 'concat', 'equal', 'compare', 'xor', 'or', 'and', 'alphabet', 'encodeLookup'] as const
+    const expected = ['arr2text', 'text2arr', 'arr2base', 'base2arr', 'hex2bin', 'bin2hex', 'hash', 'randomBytes', 'arr2hex', 'hex2arr', 'concat', 'equal', 'compare', 'xor', 'or', 'and'] as const
     for (const name of expected) {
       assert.ok(name in nodeMod, `${name} missing from node module`)
     }
   })
 
   it('browser module exports all expected functions', () => {
-    const expected = ['arr2text', 'text2arr', 'arr2base', 'base2arr', 'hex2bin', 'bin2hex', 'hash', 'randomBytes', 'arr2hex', 'hex2arr', 'concat', 'equal', 'compare', 'xor', 'or', 'and', 'alphabet', 'encodeLookup'] as const
+    const expected = ['arr2text', 'text2arr', 'arr2base', 'base2arr', 'hex2bin', 'bin2hex', 'hash', 'randomBytes', 'arr2hex', 'hex2arr', 'concat', 'equal', 'compare', 'xor', 'or', 'and'] as const
     for (const name of expected) {
       assert.ok(name in browserMod, `${name} missing from browser module`)
     }

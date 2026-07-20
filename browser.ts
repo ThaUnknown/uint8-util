@@ -1,35 +1,41 @@
-import { arr2hex, hex2arr, encodeLookup, type Encoding, type HashType, type HashAlgo } from './util.ts'
+import type { HashType, HashAlgo, ByteArray } from './util.ts'
 
-const decoder = new TextDecoder()
-export const arr2text = (data: AllowSharedBufferSource, enc?: Encoding) => {
-  if (!enc) return decoder.decode(data)
-  const dec = new TextDecoder(enc)
-  return dec.decode(data)
+const alphabet = '0123456789abcdef'
+const encodeLookup: string[] = []
+const decodeLookup: number[] = []
+
+for (let i = 0; i < 16; ++i) {
+  const i16 = i * 16
+  for (let j = 0; j < 16; ++j) {
+    encodeLookup[i16 + j] = alphabet[i]! + alphabet[j]!
+  }
+  if (i < 10) {
+    decodeLookup[0x30 + i] = i
+  } else {
+    decodeLookup[0x61 - 10 + i] = i
+  }
+}
+
+export const arr2hex = (data: ByteArray) => data.toHex()
+
+export const hex2arr = (str: string) => {
+  const len = str.length
+  if (len > 64) return Uint8Array.fromHex(str)
+  const out = new Uint8Array(len >> 1)
+  let j = 0
+  let i = 0
+  while (i < len) {
+    out[j++] = (decodeLookup[str.charCodeAt(i++)]! << 4) | decodeLookup[str.charCodeAt(i++)]!
+  }
+  return out
 }
 
 const encoder = new TextEncoder()
 export const text2arr = (str: string) => encoder.encode(str)
 
-export const arr2base = (data: ArrayBufferView<ArrayBuffer>) => {
-  const bytes = new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
-  const len = bytes.length
-  if (len <= MAX_ARGUMENTS_LENGTH) return btoa(String.fromCharCode.apply(null, bytes as unknown as number[]))
-  let binary = ''
-  let i = 0
-  while (i < len) {
-    const end = Math.min(i + MAX_ARGUMENTS_LENGTH, len)
-    binary += String.fromCharCode.apply(null, bytes.subarray(i, end) as unknown as number[])
-    i = end
-  }
-  return btoa(binary)
-}
-export const base2arr = (str: string) => {
-  const binary = atob(str)
-  const len = binary.length
-  const arr = new Uint8Array(len)
-  for (let i = 0; i < len; i++) arr[i] = binary.charCodeAt(i)
-  return arr
-}
+export const arr2base = (bytes: ByteArray) => bytes.toBase64()
+
+export const base2arr = (str: string) => Uint8Array.fromBase64(str)
 
 export const bin2hex = (str: string) => {
   let res = ''
@@ -74,10 +80,55 @@ export async function hash (
   algo: HashAlgo = 'sha-1'
 ): Promise<Uint8Array<ArrayBuffer> | string> {
   if (typeof data === 'string') data = text2arr(data)
-  const out = new Uint8Array(await globalThis.crypto.subtle.digest(algo, data))
+  const out = new Uint8Array(await crypto.subtle.digest(algo, data))
   return format ? formatMap[format](out) : out
 }
 
-export const randomBytes = (size: number) => globalThis.crypto.getRandomValues(new Uint8Array(size))
+export const randomBytes = (size: number) => crypto.getRandomValues(new Uint8Array(size))
+
+// TODO: fix this and xor
+export function equal (a: ByteArray, b: ByteArray) {
+  if (a.length !== b.length) return false
+  for (let i = a.length - 1; i > -1; --i) { if (a[i] !== b[i]) return false }
+  return true
+}
+
+export function compare (a: ByteArray, b: ByteArray) {
+  const len = a.byteLength < b.byteLength ? a.byteLength : b.byteLength
+  if (len < 128) {
+    for (let i = 0; i < len; i++) if (a[i] !== b[i]) return a[i]! - b[i]!
+    return a.byteLength - b.byteLength
+  }
+
+  const words = len >> 3
+  if ((a.byteOffset & 7) === 0 && (b.byteOffset & 7) === 0) {
+    const a64 = new BigInt64Array(a.buffer, a.byteOffset, words)
+    const b64 = new BigInt64Array(b.buffer, b.byteOffset, words)
+    for (let j = 0; j < words; j++) {
+      if (a64[j] !== b64[j]) {
+        const o = j << 3
+        for (let k = 0; k < 8; k++) {
+          if (a[o + k] !== b[o + k]) return a[o + k]! - b[o + k]!
+        }
+      }
+    }
+  } else {
+    const dvA = new DataView(a.buffer, a.byteOffset, a.byteLength)
+    const dvB = new DataView(b.buffer, b.byteOffset, b.byteLength)
+    for (let j = 0; j < words; j++) {
+      const o = j << 3
+      if (dvA.getBigInt64(o) !== dvB.getBigInt64(o)) {
+        for (let k = 0; k < 8; k++) {
+          if (a[o + k] !== b[o + k]) return a[o + k]! - b[o + k]!
+        }
+      }
+    }
+  }
+
+  for (let i = words << 3; i < len; i++) {
+    if (a[i] !== b[i]) return a[i]! - b[i]!
+  }
+  return a.byteLength - b.byteLength
+}
 
 export * from './util.ts'

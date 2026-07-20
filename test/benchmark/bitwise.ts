@@ -184,7 +184,7 @@ const xorAlignedStrategies: Array<{ label: string, fn: (a: Uint8Array, b: Uint8A
   { label: 'applyGeneric', fn: (a, b) => { xorGenOp(a, b) } },
   { label: 'byteBack', fn: xorByteBack },
   { label: 'byteFwd', fn: xorByteForward },
-  { label: 'bigOp', fn: xorBigOp },
+  { label: 'bigOp', fn: xorBigOp }
 ]
 
 const xorUnalignedVariants: Array<{ label: string, offA: number, offB: number }> = [
@@ -192,7 +192,7 @@ const xorUnalignedVariants: Array<{ label: string, offA: number, offB: number }>
   { label: 'align2 (off 0,2)', offA: 0, offB: 2 },
   { label: 'unalign1 (off 1,1)', offA: 1, offB: 1 },
   { label: 'unalign2 (off 1,2)', offA: 1, offB: 2 },
-  { label: 'unalign3 (off 3,7)', offA: 3, offB: 7 },
+  { label: 'unalign3 (off 3,7)', offA: 3, offB: 7 }
 ]
 
 export async function benchBitwise () {
@@ -205,20 +205,6 @@ export async function benchBitwise () {
 
     if (size >= 4) {
       xorAligned.push(measureAligned('xor 32bit', size, xor32))
-    }
-    if (size >= 16) {
-      xorAligned.push({
-        name: 'xor Int16Array',
-        ops: measure(() => {
-          const [a, b] = getPair(size); xor(new Int16Array(a.buffer), new Int16Array(b.buffer))
-        })
-      })
-      xorAligned.push({
-        name: 'xor Int32Array',
-        ops: measure(() => {
-          const [a, b] = getPair(size); xor(new Int32Array(a.buffer), new Int32Array(b.buffer))
-        })
-      })
     }
 
     run(`xor aligned ${size}B`, xorAligned)
@@ -234,32 +220,18 @@ export async function benchBitwise () {
         xorUnaligned.push(measureUnaligned(`xor byteFwd ${v.label}`, size, xorByteForward, v.offA, v.offB))
         xorUnaligned.push(measureUnaligned(`xor byteBack ${v.label}`, size, xorByteBack, v.offA, v.offB))
         xorUnaligned.push(measureUnaligned(`xor 32bit ${v.label}`, size, xor32, v.offA, v.offB))
-        xorUnaligned.push({
-          name: `xor Int16Array ${v.label}`,
-          ops: measure(() => {
-            const [a, b] = getUnalignedPair(size, v.offA, v.offB)
-            xor(new Int16Array(a.buffer, a.byteOffset, a.byteLength >> 1), new Int16Array(b.buffer, b.byteOffset, b.byteLength >> 1))
-          })
-        })
-        xorUnaligned.push({
-          name: `xor Int32Array ${v.label}`,
-          ops: measure(() => {
-            const [a, b] = getUnalignedPair(size, v.offA, v.offB)
-            xor(new Int32Array(a.buffer, a.byteOffset, a.byteLength >> 2), new Int32Array(b.buffer, b.byteOffset, b.byteLength >> 2))
-          })
-        })
         run(`xor unaligned ${v.label} ${size}B`, xorUnaligned)
       }
     }
 
     run(`or aligned ${size}B`, [
       measureAligned('or lib', size, (a, b) => { or(a, b) }),
-      measureAligned('or old', size, (a, b) => { orOld(a, b) }),
+      measureAligned('or old', size, (a, b) => { orOld(a, b) })
     ])
 
     run(`and aligned ${size}B`, [
       measureAligned('and lib', size, (a, b) => { and(a, b) }),
-      measureAligned('and old', size, (a, b) => { andOld(a, b) }),
+      measureAligned('and old', size, (a, b) => { andOld(a, b) })
     ])
   }
 }

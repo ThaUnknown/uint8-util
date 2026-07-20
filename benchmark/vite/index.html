@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>uint8-util Browser Benchmarks</title>
+</head>
+<body>
+  <pre id="output" style="font-family: monospace; white-space: pre; background: #0d1117; color: #c9d1d9; padding: 16px; min-height: 100vh; margin: 0;"></pre>
+  <script>
+    // intercept console.log to also write to <pre>
+    const orig = console.log.bind(console)
+    const pre = document.getElementById('output')
+    console.log = (...args) => {
+      orig(...args)
+      pre.textContent += args.join(' ') + '\n'
+    }
+  </script>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

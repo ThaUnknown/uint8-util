@@ -1,5 +1,5 @@
 import { arr2text, text2arr } from '../../_node.ts'
-import { text2arr as text2arrBr } from '../../browser.ts'
+import { arr2text as arr2textBr, text2arr as text2arrBr } from '../../browser.ts'
 
 import { SIZES, measure, run, getText } from './_suite.ts'
 
@@ -46,6 +46,17 @@ function utf8Spread (data: Uint8Array): string {
 function arr2textBuffer (data: Uint8Array): string {
   return Buffer.from(data).toString('utf8')
 }
+function arr2textBufferRef (data: Uint8Array): string {
+  return Buffer.from(data.buffer, data.byteOffset, data.byteLength).toString('utf8')
+}
+
+function text2arrbufferRef (str: string) {
+  const buf = Buffer.from(str, 'utf8')
+  return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength)
+}
+function text2arrbufferCopy (str: string) {
+  return new Uint8Array(Buffer.from(str, 'utf8'))
+}
 
 function manualUtf8Encode (str: string): Uint8Array {
   const buf: number[] = []
@@ -73,12 +84,14 @@ export async function benchArr2text () {
     const results: Array<{ name: string, ops: number }> = []
 
     results.push({ name: `arr2text lib       ${size}B`, ops: measure(() => arr2text(arr)) })
+    results.push({ name: `arr2text lib-br    ${size}B`, ops: measure(() => arr2textBr(arr)) })
     results.push({ name: `arr2text manual    ${size}B`, ops: measure(() => manualUtf8Decode(arr)) })
     results.push({ name: `arr2text spread    ${size}B`, ops: measure(() => utf8Spread(arr)) })
     results.push({ name: `arr2text buffer    ${size}B`, ops: measure(() => arr2textBuffer(arr)) })
-    results.push({ name: `arr2text utf-16le  ${size}B`, ops: measure(() => arr2text(arr, 'utf-16le')) })
-    results.push({ name: `arr2text latin1    ${size}B`, ops: measure(() => arr2text(arr, 'latin1')) })
-    results.push({ name: `arr2text ascii     ${size}B`, ops: measure(() => arr2text(arr, 'ascii')) })
+    results.push({ name: `arr2text bufferref    ${size}B`, ops: measure(() => arr2textBufferRef(arr)) })
+    // results.push({ name: `arr2text utf-16le  ${size}B`, ops: measure(() => arr2text(arr, 'utf-16le')) })
+    // results.push({ name: `arr2text latin1    ${size}B`, ops: measure(() => arr2text(arr, 'latin1')) })
+    // results.push({ name: `arr2text ascii     ${size}B`, ops: measure(() => arr2text(arr, 'ascii')) })
 
     run(`arr2text ${size}B`, results)
   }
@@ -93,6 +106,7 @@ export async function benchText2arr () {
     results.push({ name: `text2arr lib-br    ${size}B`, ops: measure(() => text2arrBr(text)) })
     results.push({ name: `text2arr encoder   ${size}B`, ops: measure(() => text2arrEncoder(text)) })
     results.push({ name: `text2arr manual    ${size}B`, ops: measure(() => manualUtf8Encode(text)) })
+    results.push({ name: `text2arr buffercopy    ${size}B`, ops: measure(() => text2arrbufferCopy(text)) })
 
     run(`text2arr ${size}B`, results)
   }

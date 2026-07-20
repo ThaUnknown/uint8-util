@@ -1,4 +1,5 @@
 import { equal, compare } from '../../_node.ts'
+import { equal as equalBr, compare as compareBr } from '../../browser.ts'
 
 import { SIZES, measure, run } from './_suite.ts'
 
@@ -104,18 +105,61 @@ function compare32 (a: Uint8Array, b: Uint8Array): number {
 }
 
 function compareDataView (a: Uint8Array, b: Uint8Array): number {
-  const min = Math.min(a.byteLength, b.byteLength)
+  const len = Math.min(a.byteLength, b.byteLength)
+
+  const words = len >> 3
   const dvA = new DataView(a.buffer, a.byteOffset, a.byteLength)
   const dvB = new DataView(b.buffer, b.byteOffset, b.byteLength)
-  const words = min >> 2
-  for (let i = 0; i < words; i++) {
-    if (dvA.getUint32(i << 2) !== dvB.getUint32(i << 2)) {
-      const o = i << 2
-      for (let j = 0; j < 4; j++) { if (a[o + j] !== b[o + j]) return a[o + j] - b[o + j] }
+  for (let j = 0; j < words; j++) {
+    const o = j << 3
+    if (dvA.getBigInt64(o) !== dvB.getBigInt64(o)) {
+      for (let k = 0; k < 8; k++) {
+        if (a[o + k] !== b[o + k]) return a[o + k]! - b[o + k]!
+      }
     }
   }
-  const off = words << 2
-  for (let i = off; i < min; i++) { if (a[i] !== b[i]) return a[i] - b[i] }
+
+  for (let i = words << 3; i < len; i++) {
+    if (a[i] !== b[i]) return a[i]! - b[i]!
+  }
+  return a.byteLength - b.byteLength
+}
+
+function hybrid (a: Uint8Array, b: Uint8Array): number {
+  const len = a.byteLength < b.byteLength ? a.byteLength : b.byteLength
+  if (len < 128) {
+    for (let i = 0; i < len; i++) if (a[i] !== b[i]) return a[i]! - b[i]!
+    return a.byteLength - b.byteLength
+  }
+
+  const words = len >> 3
+  if ((a.byteOffset & 7) === 0 && (b.byteOffset & 7) === 0) {
+    const a64 = new BigInt64Array(a.buffer, a.byteOffset, words)
+    const b64 = new BigInt64Array(b.buffer, b.byteOffset, words)
+    for (let j = 0; j < words; j++) {
+      if (a64[j] !== b64[j]) {
+        const o = j << 3
+        for (let k = 0; k < 8; k++) {
+          if (a[o + k] !== b[o + k]) return a[o + k]! - b[o + k]!
+        }
+      }
+    }
+  } else {
+    const dvA = new DataView(a.buffer, a.byteOffset, a.byteLength)
+    const dvB = new DataView(b.buffer, b.byteOffset, b.byteLength)
+    for (let j = 0; j < words; j++) {
+      const o = j << 3
+      if (dvA.getBigInt64(o) !== dvB.getBigInt64(o)) {
+        for (let k = 0; k < 8; k++) {
+          if (a[o + k] !== b[o + k]) return a[o + k]! - b[o + k]!
+        }
+      }
+    }
+  }
+
+  for (let i = words << 3; i < len; i++) {
+    if (a[i] !== b[i]) return a[i]! - b[i]!
+  }
   return a.byteLength - b.byteLength
 }
 
@@ -127,9 +171,10 @@ export async function benchEqual () {
     const mid = Math.floor(size / 2)
     const aMid = Uint8Array.from(a); aMid[mid] ^= 1
 
-    for (const [label, a2, b2] of [['equal   ', a, b], ['diffMid  ', aMid, b], ['diffLen  ', a, new Uint8Array(size - 1)]] as const) {
+    for (const [label, a2, b2] of [['equal   ', a, b], ['diffStart  ', aStart, b], ['diffMid  ', aMid, b], ['diffLen  ', a, b.slice(0, size - 1)]] as const) {
       const results: Array<{ name: string, ops: number }> = []
       results.push({ name: `equal lib ${label} ${size}B`, ops: measure(() => equal(a2, b2)) })
+      results.push({ name: `equal lib-br ${label} ${size}B`, ops: measure(() => equalBr(a2, b2)) })
       results.push({ name: `equal byte ${label} ${size}B`, ops: measure(() => equalByte(a2, b2)) })
       if (size >= 4) {
         results.push({ name: `equal 32 ${label} ${size}B`, ops: measure(() => equal32(a2, b2)) })
@@ -143,6 +188,7 @@ export async function benchEqual () {
         const aU = misalign(a2, 1); const bU = misalign(b2, 1)
         const unalignResults: Array<{ name: string, ops: number }> = []
         unalignResults.push({ name: `equal lib unalign ${label} ${size}B`, ops: measure(() => equal(aU, bU)) })
+        unalignResults.push({ name: `equal lib-br unalign ${label} ${size}B`, ops: measure(() => equalBr(aU, bU)) })
         unalignResults.push({ name: `equal byte unalign ${label} ${size}B`, ops: measure(() => equalByte(aU, bU)) })
         if (size >= 4) {
           unalignResults.push({ name: `equal 32 unalign ${label} ${size}B`, ops: measure(() => equal32(aU, bU)) })
@@ -163,27 +209,31 @@ export async function benchCompare () {
     const mid = Math.floor(size / 2)
     const aMid = Uint8Array.from(a); aMid[mid] ^= 1
 
-    for (const [label, a2, b2] of [['equal   ', a, b], ['diffMid  ', aMid, b], ['diffLen  ', a, new Uint8Array(size - 1)]] as const) {
+    for (const [label, a2, b2] of [['equal   ', a, b], ['diffMid  ', aMid, b], ['diffLen  ', a, b.slice(0, size - 1)]] as const) {
       const results: Array<{ name: string, ops: number }> = []
-      results.push({ name: `comp lib ${label} ${size}B`, ops: measure(() => compare(a2, b2)) })
+      // results.push({ name: `comp lib ${label} ${size}B`, ops: measure(() => compare(a2, b2)) })
+      results.push({ name: `comp lib-br ${label} ${size}B`, ops: measure(() => compareBr(a2, b2)) })
       results.push({ name: `comp byte ${label} ${size}B`, ops: measure(() => compareByte(a2, b2)) })
+      results.push({ name: `comp hybrid ${label} ${size}B`, ops: measure(() => hybrid(a2, b2)) })
       if (size >= 4) {
         results.push({ name: `comp 32 ${label} ${size}B`, ops: measure(() => compare32(a2, b2)) })
         results.push({ name: `comp dv ${label} ${size}B`, ops: measure(() => compareDataView(a2, b2)) })
       }
-      results.push({ name: `comp buf ${label} ${size}B`, ops: measure(() => Buffer.compare(a2, b2)) })
+      // results.push({ name: `comp buf ${label} ${size}B`, ops: measure(() => Buffer.compare(a2, b2)) })
       run(`compare ${label} ${size}B`, results)
 
       if (size >= 8) {
         const aU = misalign(a2, 1); const bU = misalign(b2, 1)
         const unalignResults: Array<{ name: string, ops: number }> = []
-        unalignResults.push({ name: `comp lib unalign ${label} ${size}B`, ops: measure(() => compare(aU, bU)) })
+        // unalignResults.push({ name: `comp lib unalign ${label} ${size}B`, ops: measure(() => compare(aU, bU)) })
+        unalignResults.push({ name: `comp lib-br unalign ${label} ${size}B`, ops: measure(() => compareBr(aU, bU)) })
         unalignResults.push({ name: `comp byte unalign ${label} ${size}B`, ops: measure(() => compareByte(aU, bU)) })
+        unalignResults.push({ name: `comp hybrid unalign ${label} ${size}B`, ops: measure(() => hybrid(aU, bU)) })
         if (size >= 4) {
           unalignResults.push({ name: `comp 32 unalign ${label} ${size}B`, ops: measure(() => compare32(aU, bU)) })
           unalignResults.push({ name: `comp dv unalign ${label} ${size}B`, ops: measure(() => compareDataView(aU, bU)) })
         }
-        unalignResults.push({ name: `comp buf unalign ${label} ${size}B`, ops: measure(() => Buffer.compare(aU, bU)) })
+        // unalignResults.push({ name: `comp buf unalign ${label} ${size}B`, ops: measure(() => Buffer.compare(aU, bU)) })
         run(`compare unalign ${label} ${size}B`, unalignResults)
       }
     }

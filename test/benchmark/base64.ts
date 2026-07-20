@@ -1,3 +1,5 @@
+import { decode as b64abDecode, encode as b64abEncode } from 'base64-arraybuffer'
+
 import { arr2base, base2arr } from '../../_node.ts'
 import { arr2base as arr2baseBr, base2arr as base2arrBr } from '../../browser.ts'
 
@@ -36,6 +38,21 @@ function manualB64 (data: Uint8Array): string {
   return out
 }
 
+function base2arrbufferRef (str: string) {
+  const buf = Buffer.from(str, 'base64')
+  return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength)
+}
+function base2arrbufferCopy (str: string) {
+  return new Uint8Array(Buffer.from(str, 'base64'))
+}
+
+function arr2basebufref (buf: Uint8Array) {
+  return Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength).toString('base64')
+}
+function arr2basebufcopy (buf: Uint8Array) {
+  return Buffer.from(buf).toString('base64')
+}
+
 function atobCharCode (str: string): Uint8Array {
   const bin = atob(str)
   const arr = new Uint8Array(bin.length)
@@ -53,6 +70,10 @@ export async function benchArr2base () {
     results.push({ name: `arr2base btoaChar  ${size}B`, ops: measure(() => btoaCharCode(data)) })
     if (size <= 16384) results.push({ name: `arr2base btoaApply ${size}B`, ops: measure(() => btoaApply(data)) })
     results.push({ name: `arr2base manualB64 ${size}B`, ops: measure(() => manualB64(data)) })
+    results.push({ name: `arr2base bufferref ${size}B`, ops: measure(() => arr2basebufref(data)) })
+    results.push({ name: `arr2base buffercopy ${size}B`, ops: measure(() => arr2basebufcopy(data)) })
+    results.push({ name: `arr2base base64ab  ${size}B`, ops: measure(() => b64abEncode(data.slice().buffer)) })
+    results.push({ name: `arr2base toBase64  ${size}B`, ops: measure(() => data.toBase64()) })
 
     run(`arr2base ${size}B`, results)
   }
@@ -67,6 +88,10 @@ export async function benchBase2arr () {
     results.push({ name: `base2arr lib       ${size}B`, ops: measure(() => base2arr(base64)) })
     results.push({ name: `base2arr lib-br    ${size}B`, ops: measure(() => base2arrBr(base64)) })
     results.push({ name: `base2arr atobChar  ${size}B`, ops: measure(() => atobCharCode(base64)) })
+    results.push({ name: `base2arr bufferRef  ${size}B`, ops: measure(() => base2arrbufferRef(base64)) })
+    results.push({ name: `base2arr bufferCopy  ${size}B`, ops: measure(() => base2arrbufferCopy(base64)) })
+    results.push({ name: `base2arr base64ab   ${size}B`, ops: measure(() => new Uint8Array(b64abDecode(base64))) })
+    results.push({ name: `base2arr fromBase64 ${size}B`, ops: measure(() => Uint8Array.fromBase64(base64)) })
 
     run(`base2arr ${size}B`, results)
   }

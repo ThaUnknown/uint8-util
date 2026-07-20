@@ -1,5 +1,5 @@
 import { arr2hex, hex2arr, hex2bin, bin2hex } from '../../_node.ts'
-import { bin2hex as bin2hexBr, hex2bin as hex2binBr } from '../../browser.ts'
+import { arr2hex as arr2hexBr, hex2arr as hex2arrBr, bin2hex as bin2hexBr, hex2bin as hex2binBr } from '../../browser.ts'
 
 import { SIZES, measure, run, getData, getBinaryString } from './_suite.ts'
 
@@ -130,34 +130,79 @@ function hex2binSpread2arr (hex: string): string {
   return decodeCodePointsArray(Array.from(arr))
 }
 
+function arr2hexToString16 (data: Uint8Array): string {
+  let s = ''
+  for (let i = 0; i < data.length; i++) {
+    const h = data[i]!.toString(16)
+    s += h.length === 1 ? '0' + h : h
+  }
+  return s
+}
+
+function arr2hexArray (data: Uint8Array): string {
+  const hexes = new Array(data.length)
+  for (let i = 0; i < data.length; i++) hexes[i] = encodeLookup[data[i]!]!
+  return hexes.join('')
+}
+
+function arr2hexSimpleLoop (data: Uint8Array): string {
+  let out = ''
+  for (let i = 0; i < data.length; ++i) {
+    out += encodeLookup[data[i]!]!
+  }
+  return out
+}
+
+function arr2hexbufref (buf: Uint8Array) {
+  return Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength).toString('hex')
+}
+function arr2hexbufcopy (buf: Uint8Array) {
+  return Buffer.from(buf).toString('hex')
+}
+
+function hex2arrbufferRef (str: string) {
+  const buf = Buffer.from(str, 'hex')
+  return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength)
+}
+function hex2arrbufferCopy (str: string) {
+  return new Uint8Array(Buffer.from(str, 'hex'))
+}
+
 export async function benchArr2hex () {
   for (const size of SIZES) {
     const data = getData(size)
     const results: Array<{ name: string, ops: number }> = []
 
     results.push({ name: `arr2hex lib         ${size}B`, ops: measure(() => arr2hex(data)) })
-    results.push({ name: `arr2hex nibbles     ${size}B`, ops: measure(() => arr2hexNibbles(data)) })
-    results.push({ name: `arr2hex concat      ${size}B`, ops: measure(() => arr2hexConcat(data)) })
-    results.push({
-      name: `arr2hex unroll2     ${size}B`,
-      ops: measure(() => {
-        const d = data; const len = d.length; let s = ''; let i = 0
-        while (i + 2 <= len) { s += encodeLookup[d[i++]] + encodeLookup[d[i++]] }
-        while (i < len) { s += encodeLookup[d[i++]] }
-        return s
-      })
-    })
-    results.push({
-      name: `arr2hex unroll4     ${size}B`,
-      ops: measure(() => {
-        const d = data; const len = d.length; let s = ''; let i = 0
-        while (i + 4 <= len) {
-          s += encodeLookup[d[i++]] + encodeLookup[d[i++]] + encodeLookup[d[i++]] + encodeLookup[d[i++]]
-        }
-        while (i < len) { s += encodeLookup[d[i++]] }
-        return s
-      })
-    })
+    results.push({ name: `arr2hex lib-br      ${size}B`, ops: measure(() => arr2hexBr(data)) })
+    // results.push({ name: `arr2hex nibbles     ${size}B`, ops: measure(() => arr2hexNibbles(data)) })
+    // results.push({ name: `arr2hex concat      ${size}B`, ops: measure(() => arr2hexConcat(data)) })
+    // results.push({
+    //   name: `arr2hex unroll2     ${size}B`,
+    //   ops: measure(() => {
+    //     const d = data; const len = d.length; let s = ''; let i = 0
+    //     while (i + 2 <= len) { s += encodeLookup[d[i++]] + encodeLookup[d[i++]] }
+    //     while (i < len) { s += encodeLookup[d[i++]] }
+    //     return s
+    //   })
+    // })
+    // results.push({
+    //   name: `arr2hex unroll4     ${size}B`,
+    //   ops: measure(() => {
+    //     const d = data; const len = d.length; let s = ''; let i = 0
+    //     while (i + 4 <= len) {
+    //       s += encodeLookup[d[i++]] + encodeLookup[d[i++]] + encodeLookup[d[i++]] + encodeLookup[d[i++]]
+    //     }
+    //     while (i < len) { s += encodeLookup[d[i++]] }
+    //     return s
+    //   })
+    // })
+    // results.push({ name: `arr2hex toString16 ${size}B`, ops: measure(() => arr2hexToString16(data)) })
+    // results.push({ name: `arr2hex array       ${size}B`, ops: measure(() => arr2hexArray(data)) })
+    // results.push({ name: `arr2hex simple      ${size}B`, ops: measure(() => arr2hexSimpleLoop(data)) })
+    // results.push({ name: `arr2hex bufferref  ${size}B`, ops: measure(() => arr2hexbufref(data)) })
+    // results.push({ name: `arr2hex buffercopy ${size}B`, ops: measure(() => arr2hexbufcopy(data)) })
+    results.push({ name: `arr2hex toHex      ${size}B`, ops: measure(() => data.toHex()) })
 
     run(`arr2hex ${size}B`, results)
   }
@@ -170,6 +215,7 @@ export async function benchHex2arr () {
     const results: Array<{ name: string, ops: number }> = []
 
     results.push({ name: `hex2arr lib         ${size}B`, ops: measure(() => hex2arr(hex)) })
+    results.push({ name: `hex2arr lib-br      ${size}B`, ops: measure(() => hex2arrBr(hex)) })
     results.push({ name: `hex2arr inline      ${size}B`, ops: measure(() => hex2arrInline(hex)) })
     results.push({ name: `hex2arr parseInt    ${size}B`, ops: measure(() => hex2arrParseInt(hex)) })
     results.push({ name: `hex2arr Number      ${size}B`, ops: measure(() => hex2arrNumber(hex)) })
@@ -188,6 +234,17 @@ export async function benchHex2arr () {
         return out
       })
     })
+    results.push({
+      name: `hex2arr unroll1     ${size}B`,
+      ops: measure(() => {
+        const str = hex; const len = str.length; const out = new Uint8Array(len >> 1); let j = 0; let i = 0
+        while (i < len) { out[j++] = (decodeLookup[str.charCodeAt(i++)] << 4) | decodeLookup[str.charCodeAt(i++)] }
+        return out
+      })
+    })
+    results.push({ name: `hex2arr bufferRef  ${size}B`, ops: measure(() => hex2arrbufferRef(hex)) })
+    results.push({ name: `hex2arr bufferCopy ${size}B`, ops: measure(() => hex2arrbufferCopy(hex)) })
+    results.push({ name: `hex2arr fromHex    ${size}B`, ops: measure(() => Uint8Array.fromHex(hex)) })
 
     run(`hex2arr ${size}B`, results)
   }

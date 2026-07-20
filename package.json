@@ -15,6 +15,7 @@
     "bench-node-one": "node benchmark/bin2hex.js",
     "bench-browser-all": "airtap --preset local -- benchmark/index.js",
     "bench-browser-one": "airtap --preset local -- benchmark/hex2arr.js",
+    "bench-vite": "vite --config vite.config.ts benchmark/vite/",
     "test": "node --experimental-test-coverage --test test/all.test.ts"
   },
   "exports": {
@@ -65,9 +66,11 @@
     "@types/node": "^26.1.1",
     "airtap": "^4.0.4",
     "airtap-manual": "^1.0.0",
-    "base64-arraybuffer": "^1.0.2",
     "babelify": "^10.0.0",
+    "base64-arraybuffer": "^1.0.2",
     "benchmark": "^2.1.4",
-    "eslint-config-standard-universal": "^1.0.10"
+    "eslint-config-standard-universal": "^1.0.10",
+    "vite": "^8.1.5",
+    "vite-plugin-node-polyfills": "^0.28.0"
   }
 }

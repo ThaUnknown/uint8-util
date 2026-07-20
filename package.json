@@ -1,10 +1,10 @@
 {
   "name": "uint8-util",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "description": "Fastest possible buffer-like utilities for uint8.",
-  "main": "dist/_node.js",
-  "browser": "dist/browser.js",
-  "chromeapp": "dist/browser.js",
+  "main": "./dist/src/node.js",
+  "browser": "./dist/src/browser.js",
+  "chromeapp": "./dist/src/browser.js",
   "type": "module",
   "packageManager": "pnpm@10.28.1",
   "scripts": {
@@ -20,21 +20,23 @@
     "test": "node --experimental-test-coverage --test test/all.test.ts"
   },
   "exports": {
-    "node": {
-      "types": "./dist/src/browser.d.ts",
-      "import": "./dist/src/node.js"
-    },
-    "browser": {
-      "types": "./dist/src/browser.d.ts",
-      "import": "./dist/src/browser.js"
-    },
-    "chromeapp": {
-      "types": "./dist/src/browser.d.ts",
-      "import": "./dist/src/browser.js"
-    },
-    "default": {
-      "types": "./dist/src/browser.d.ts",
-      "import": "./dist/src/browser.js"
+    ".": {
+      "node": {
+        "types": "./dist/src/browser.d.ts",
+        "import": "./dist/src/node.js"
+      },
+      "browser": {
+        "types": "./dist/src/browser.d.ts",
+        "import": "./dist/src/browser.js"
+      },
+      "chromeapp": {
+        "types": "./dist/src/browser.d.ts",
+        "import": "./dist/src/browser.js"
+      },
+      "default": {
+        "types": "./dist/src/browser.d.ts",
+        "import": "./dist/src/browser.js"
+      }
     }
   },
   "types": "./dist/src/browser.d.ts",

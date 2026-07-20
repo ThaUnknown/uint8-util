@@ -120,7 +120,7 @@ export function compare (a: ByteArray, b: ByteArray) {
   const len = a.byteLength < b.byteLength ? a.byteLength : b.byteLength
   if (len < 128) {
     for (let i = 0; i < len; i++) if (a[i] !== b[i]) return a[i]! - b[i]!
-    return a.byteLength - b.byteLength
+    return 0
   }
 
   const words = len >> 3

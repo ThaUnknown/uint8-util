@@ -52,9 +52,9 @@ export async function hash (
 export const randomBytes = (size: number) => new Uint8Array(rand(size))
 
 export function compare (a: ByteArray, b: ByteArray) {
-  const min = Math.min(a.byteLength, b.byteLength)
-  if (min < 128) {
-    for (let i = min - 1; i > -1; --i) if (a[i] !== b[i]) return a[i]! - b[i]!
+  const len = a.byteLength < b.byteLength ? a.byteLength : b.byteLength
+  if (len < 128) {
+    for (let i = 0; i < len; i++) if (a[i] !== b[i]) return a[i]! - b[i]!
     return 0
   }
   return Buffer.compare(a, b)
@@ -63,7 +63,7 @@ export function compare (a: ByteArray, b: ByteArray) {
 export function equal (a: ByteArray, b: ByteArray) {
   if (a.byteLength !== b.byteLength) return false
   if (a.byteLength < 256) {
-    for (let i = a.byteLength - 1; i > -1; --i) if (a[i] !== b[i]) return false
+    for (let i = 0; i < a.byteLength; i++) if (a[i] !== b[i]) return false
     return true
   }
   return Buffer.compare(a, b) === 0
